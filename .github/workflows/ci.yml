@@ -6,17 +6,13 @@ on:
   pull_request:
 
 permissions:
-  contents: write
-  pull-requests: read
+  contents: read
 
 jobs:
   quality:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
-          fetch-depth: 0
       - uses: pnpm/action-setup@v4
         with:
           version: 10.13.1
@@ -45,37 +41,23 @@ jobs:
             libayatana-appindicator3-dev \
             librsvg2-dev \
             patchelf
-      - name: Repair stale workspace lockfile on pull requests
-        if: github.event_name == 'pull_request'
-        run: |
-          pnpm install --no-frozen-lockfile
-          if ! git diff --quiet -- pnpm-lock.yaml; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add pnpm-lock.yaml
-            git commit -m "fix(deps): synchronize pnpm workspace lockfile"
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
-          fi
-      - name: Verify frozen lockfile install
+      - name: Install JavaScript dependencies
         run: pnpm install --frozen-lockfile
-      - name: Repair formatting on pull requests
-        if: github.event_name == 'pull_request'
-        run: |
-          pnpm format
-          cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml
-          if ! git diff --quiet; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add -A
-            git commit -m "style: apply repository formatting"
-            git push origin HEAD:${{ github.event.pull_request.head.ref }}
-          fi
-      - run: pnpm format:check
-      - run: pnpm lint
-      - run: pnpm typecheck
-      - run: pnpm test
-      - run: pnpm build
-      - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
-      - run: cargo clippy --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
-      - run: cargo test --manifest-path apps/desktop/src-tauri/Cargo.toml
-      - run: pnpm canon:manifest:dry-run
+      - name: Check formatting
+        run: pnpm format:check
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+      - name: Test TypeScript and React
+        run: pnpm test
+      - name: Build frontend
+        run: pnpm build
+      - name: Check Rust formatting
+        run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml -- --check
+      - name: Run Clippy
+        run: cargo clippy --locked --manifest-path apps/desktop/src-tauri/Cargo.toml --all-targets -- -D warnings
+      - name: Test Rust
+        run: cargo test --locked --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - name: Validate canonical source manifest
+        run: pnpm canon:manifest:dry-run
