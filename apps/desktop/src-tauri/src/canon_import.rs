@@ -1,7 +1,7 @@
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::{FromRow, SqlitePool};
-use std::{path::Path, process::Command};
+use std::{fs::File, io::Read, path::Path};
 
 use crate::{
     AppError, SourceDocument, read_canon_source_manifest, sha256_file, upsert_source_document,
@@ -295,50 +295,22 @@ fn parse_document_xml(xml: &str) -> ExtractionResult {
     ExtractionResult { blocks, warnings }
 }
 
-#[cfg(target_os = "windows")]
 fn extract_document_xml(source_path: &Path) -> Result<String, AppError> {
-    let script = r#"
-param([string]$docx)
-Add-Type -AssemblyName System.IO.Compression.FileSystem
-$archive = [System.IO.Compression.ZipFile]::OpenRead($docx)
-try {
-  $entry = $archive.GetEntry('word/document.xml')
-  if ($null -eq $entry) { throw 'word/document.xml not found' }
-  $reader = New-Object System.IO.StreamReader($entry.Open(), [System.Text.Encoding]::UTF8, $true)
-  try { $reader.ReadToEnd() } finally { $reader.Dispose() }
-} finally {
-  $archive.Dispose()
-}
-"#;
-    let output = Command::new("powershell")
-        .args(["-NoProfile", "-NonInteractive", "-Command", script])
-        .arg(source_path)
-        .output()?;
-    if !output.status.success() {
-        return Err(AppError::CanonManifest(format!(
-            "PowerShell could not read {DOCUMENT_XML_PART}: {}",
-            String::from_utf8_lossy(&output.stderr)
-        )));
-    }
-    String::from_utf8(output.stdout)
-        .map_err(|error| AppError::CanonManifest(format!("invalid UTF-8 in document.xml: {error}")))
-}
-
-#[cfg(not(target_os = "windows"))]
-fn extract_document_xml(source_path: &Path) -> Result<String, AppError> {
-    let output = Command::new("unzip")
-        .arg("-p")
-        .arg(source_path)
-        .arg(DOCUMENT_XML_PART)
-        .output()?;
-    if !output.status.success() {
-        return Err(AppError::CanonManifest(format!(
-            "unzip could not read {DOCUMENT_XML_PART}: {}",
-            String::from_utf8_lossy(&output.stderr)
-        )));
-    }
-    String::from_utf8(output.stdout)
-        .map_err(|error| AppError::CanonManifest(format!("invalid UTF-8 in document.xml: {error}")))
+    let file = File::open(source_path)?;
+    let mut archive = zip::ZipArchive::new(file)
+        .map_err(|error| AppError::CanonManifest(format!("invalid DOCX ZIP archive: {error}")))?;
+    let mut entry = archive.by_name(DOCUMENT_XML_PART).map_err(|error| {
+        AppError::CanonManifest(format!(
+            "DOCX entry {DOCUMENT_XML_PART} is unavailable: {error}"
+        ))
+    })?;
+    let mut xml = String::new();
+    entry.read_to_string(&mut xml).map_err(|error| {
+        AppError::CanonManifest(format!(
+            "could not read {DOCUMENT_XML_PART} as UTF-8: {error}"
+        ))
+    })?;
+    Ok(xml)
 }
 
 fn source_anchor(
@@ -595,6 +567,15 @@ mod tests {
             approved_at: "2026-07-17".into(),
             sha256: "a".repeat(64),
         }
+    }
+
+    #[test]
+    fn native_docx_reader_extracts_document_xml_without_external_tools() {
+        let source = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("../../../docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx");
+        let xml = extract_document_xml(&source).unwrap();
+        assert!(xml.contains("<w:document"));
+        assert!(xml.contains("<w:body"));
     }
 
     #[test]
