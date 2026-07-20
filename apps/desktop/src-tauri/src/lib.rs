@@ -297,8 +297,9 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
             canon_version: Some(manifest.current_version),
         },
         modules_implemented: implemented_modules(),
-        next_recommended_phase: "Inspect the relational model in Database Studio, then begin controlled canon review."
-            .into(),
+        next_recommended_phase:
+            "Inspect the relational model in Database Studio, then begin controlled canon review."
+                .into(),
         diagnostics,
     })
 }
@@ -383,9 +384,7 @@ async fn export_database_table(
 }
 
 #[tauri::command]
-async fn create_database_backup(
-    app: tauri::AppHandle,
-) -> Result<DatabaseFileResult, AppError> {
+async fn create_database_backup(app: tauri::AppHandle) -> Result<DatabaseFileResult, AppError> {
     let data_dir = app_data_dir(&app)?;
     let path = database_path(&data_dir);
     let pool = open_app_pool(&app).await?;

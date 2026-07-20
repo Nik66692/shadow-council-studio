@@ -262,10 +262,7 @@ async fn table_relationships(
                 .map(|column| column.name.as_str()),
         )
         .collect();
-    let sql = format!(
-        "PRAGMA foreign_key_list({})",
-        quote_identifier(table_name)?
-    );
+    let sql = format!("PRAGMA foreign_key_list({})", quote_identifier(table_name)?);
     let rows = sqlx::query(&sql).fetch_all(pool).await?;
     rows.into_iter()
         .map(|row| {
@@ -273,9 +270,7 @@ async fn table_relationships(
             let target_table: String = row.try_get("table")?;
             let target_column: String = row.try_get("to")?;
             Ok(DatabaseRelationship {
-                id: format!(
-                    "{table_name}:{source_column}->{target_table}:{target_column}"
-                ),
+                id: format!("{table_name}:{source_column}->{target_table}:{target_column}"),
                 source_table: table_name.to_owned(),
                 source_column: source_column.clone(),
                 target_table,
@@ -299,17 +294,15 @@ fn migration_source(table_name: &str) -> Option<String> {
         | "canon_raw_blocks"
         | "canon_normalized_drafts"
         | "canon_import_warnings" => Some("0002_canon_import.sql".into()),
-        "database_audit_log" | "canon_review_notes" => {
-            Some("0003_database_studio.sql".into())
-        }
+        "database_audit_log" | "canon_review_notes" => Some("0003_database_studio.sql".into()),
         _ => None,
     }
 }
 
-pub async fn run_integrity_check(
-    pool: &SqlitePool,
-) -> Result<DatabaseIntegrityReport, AppError> {
-    let rows = sqlx::query("PRAGMA integrity_check").fetch_all(pool).await?;
+pub async fn run_integrity_check(pool: &SqlitePool) -> Result<DatabaseIntegrityReport, AppError> {
+    let rows = sqlx::query("PRAGMA integrity_check")
+        .fetch_all(pool)
+        .await?;
     let messages = rows
         .into_iter()
         .map(|row| row.try_get(0))
@@ -482,9 +475,7 @@ pub async fn browse_table(
         .into_iter()
         .map(|row| {
             let json: String = row.try_get("row_json")?;
-            serde_json::from_str(&json).map_err(|error| {
-                sqlx::Error::Decode(Box::new(error))
-            })
+            serde_json::from_str(&json).map_err(|error| sqlx::Error::Decode(Box::new(error)))
         })
         .collect::<Result<Vec<Value>, sqlx::Error>>()?;
 
@@ -557,15 +548,15 @@ pub async fn export_table(
     }
 
     let timestamp = Utc::now().format("%Y%m%dT%H%M%SZ");
-    let file_name = format!(
-        "{}-{timestamp}.{normalized_format}",
-        request.table_name
-    );
+    let file_name = format!("{}-{timestamp}.{normalized_format}", request.table_name);
     let path = export_dir.join(&file_name);
     match normalized_format {
-        "json" => fs::write(&path, serde_json::to_vec_pretty(&all_rows).map_err(|error| {
-            AppError::DatabaseStudio(format!("could not serialize JSON export: {error}"))
-        })?)?,
+        "json" => fs::write(
+            &path,
+            serde_json::to_vec_pretty(&all_rows).map_err(|error| {
+                AppError::DatabaseStudio(format!("could not serialize JSON export: {error}"))
+            })?,
+        )?,
         "csv" => {
             let mut output = String::new();
             output.push_str(
