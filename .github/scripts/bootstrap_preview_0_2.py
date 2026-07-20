@@ -1,0 +1,247 @@
+from pathlib import Path
+import json
+
+
+def replace_once(path: str, old: str, new: str) -> None:
+    file = Path(path)
+    text = file.read_text()
+    if old not in text:
+        raise SystemExit(f"Expected block not found in {path}: {old[:120]!r}")
+    file.write_text(text.replace(old, new, 1))
+
+
+tauri_path = Path("apps/desktop/src-tauri/tauri.conf.json")
+tauri = json.loads(tauri_path.read_text())
+tauri["version"] = "0.2.0"
+tauri["app"]["windows"] = [
+    {
+        "title": "Shadow Council Studio",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 980,
+        "minHeight": 680,
+    }
+]
+tauri["bundle"] = {
+    "active": True,
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico", "icons/icon.png"],
+    "resources": {
+        "../../../docs/canon/source/manifest.json": "docs/canon/source/manifest.json",
+        "../../../docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx": "docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx",
+    },
+}
+tauri_path.write_text(json.dumps(tauri, indent=2, ensure_ascii=False) + "\n")
+
+package_path = Path("apps/desktop/package.json")
+package = json.loads(package_path.read_text())
+package["version"] = "0.2.0"
+package_path.write_text(json.dumps(package, indent=2) + "\n")
+
+replace_once(
+    "apps/desktop/src-tauri/Cargo.toml",
+    'version = "0.0.0"',
+    'version = "0.2.0"',
+)
+
+replace_once(
+    "apps/desktop/src-tauri/src/lib.rs",
+    '''fn repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..")
+}
+''',
+    '''fn development_repo_root() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..")
+}
+
+fn select_content_root(
+    development_root: PathBuf,
+    resource_root: Option<PathBuf>,
+    debug_build: bool,
+) -> PathBuf {
+    if debug_build
+        && development_root
+            .join(SOURCE_MANIFEST_RELATIVE_PATH)
+            .is_file()
+    {
+        return development_root;
+    }
+    resource_root.unwrap_or(development_root)
+}
+
+fn content_root(app: &tauri::AppHandle) -> PathBuf {
+    select_content_root(
+        development_repo_root(),
+        app.path().resource_dir().ok(),
+        cfg!(debug_assertions),
+    )
+}
+''',
+)
+replace_once(
+    "apps/desktop/src-tauri/src/lib.rs",
+    '''    let pool = open_app_pool(&app).await?;
+    build_health(&pool, &repo_root()).await
+}''',
+    '''    let pool = open_app_pool(&app).await?;
+    let root = content_root(&app);
+    build_health(&pool, &root).await
+}''',
+)
+replace_once(
+    "apps/desktop/src-tauri/src/lib.rs",
+    '''    let pool = open_app_pool(&app).await?;
+    import_source(&pool, &repo_root()).await
+}''',
+    '''    let pool = open_app_pool(&app).await?;
+    let root = content_root(&app);
+    import_source(&pool, &root).await
+}''',
+)
+replace_once(
+    "apps/desktop/src-tauri/src/lib.rs",
+    '''    #[tokio::test]
+    async fn repository_insert_read_source_document() {''',
+    '''    #[test]
+    fn release_build_prefers_bundled_canon_resources() {
+        let development = tempdir().unwrap();
+        let resources = tempdir().unwrap();
+        let development_root = development.path().to_path_buf();
+        let resource_root = resources.path().to_path_buf();
+        let manifest = development_root.join(SOURCE_MANIFEST_RELATIVE_PATH);
+        fs::create_dir_all(manifest.parent().unwrap()).unwrap();
+        fs::write(manifest, "{}").unwrap();
+
+        assert_eq!(
+            select_content_root(
+                development_root.clone(),
+                Some(resource_root.clone()),
+                true,
+            ),
+            development_root
+        );
+        assert_eq!(
+            select_content_root(
+                development.path().to_path_buf(),
+                Some(resource_root.clone()),
+                false,
+            ),
+            resource_root
+        );
+    }
+
+    #[tokio::test]
+    async fn repository_insert_read_source_document() {''',
+)
+
+replace_once(
+    "apps/desktop/src/DatabaseStudio.tsx",
+    '<MetadataEditor row={row} onComplete={onMutationComplete} />',
+    '<MetadataEditor key={String(row.key ?? "")} row={row} onComplete={onMutationComplete} />',
+)
+replace_once(
+    "apps/desktop/src/DatabaseStudio.tsx",
+    '<ReviewNoteEditor row={row} onComplete={onMutationComplete} />',
+    '<ReviewNoteEditor key={String(row.id ?? "")} row={row} onComplete={onMutationComplete} />',
+)
+
+replace_once(
+    "apps/desktop/src-tauri/src/database_studio.rs",
+    '''        let fetched = page.rows.len();
+        all_rows.extend(page.rows);
+        let expected_total = usize::try_from(page.total_count.max(0)).unwrap_or(usize::MAX);
+        if fetched < MAX_PAGE_SIZE as usize
+            || all_rows.len() >= expected_total
+            || all_rows.len() >= MAX_EXPORT_ROWS
+        {
+            break;
+        }
+        request.page += 1;
+''',
+    '''        let expected_total = usize::try_from(page.total_count.max(0)).unwrap_or(usize::MAX);
+        if expected_total > MAX_EXPORT_ROWS {
+            return Err(AppError::DatabaseStudio(format!(
+                "export contains {expected_total} matching rows, exceeding the safe limit of {MAX_EXPORT_ROWS}; refine the filters before exporting"
+            )));
+        }
+        let fetched = page.rows.len();
+        all_rows.extend(page.rows);
+        if fetched < MAX_PAGE_SIZE as usize || all_rows.len() >= expected_total {
+            break;
+        }
+        request.page += 1;
+''',
+)
+
+workflow = '''name: Windows Preview
+
+on:
+  pull_request:
+    paths:
+      - "apps/desktop/**"
+      - "docs/canon/source/**"
+      - ".github/workflows/windows-preview.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/desktop/**"
+      - "docs/canon/source/**"
+      - ".github/workflows/windows-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-preview:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build NSIS installer
+        working-directory: apps/desktop
+        run: pnpm dlx @tauri-apps/cli@2.7.0 build --bundles nsis
+      - name: Create SHA-256 checksum
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem "apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          if (-not $installer) { throw "NSIS installer was not produced" }
+          $hash = Get-FileHash $installer.FullName -Algorithm SHA256
+          "$($hash.Hash.ToLower()) *$($installer.Name)" | Set-Content "apps/desktop/src-tauri/target/release/bundle/nsis/SHA256SUMS.txt"
+      - name: Upload Windows preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-council-studio-windows-preview-0.2.0
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
+            apps/desktop/src-tauri/target/release/bundle/nsis/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30
+'''
+Path(".github/workflows/windows-preview.yml").write_text(workflow)
+
+readme = Path("README.md")
+text = readme.read_text()
+marker = "## Windows Preview 0.2"
+if marker not in text:
+    text += '''
+
+## Windows Preview 0.2
+
+Preview 0.2 packages the Phase 1 canonical importer and Database Studio as an unsigned local-first Windows NSIS installer. The installed application uses the immutable bundled canon manifest and Source of Truth v1.3; development builds may use repository resources. Database Studio provides dynamic schema discovery, relationship navigation, paginated browsing, safe exports, integrity checks, backups and audited allowlisted edits. Windows may show SmartScreen because internal previews are not code-signed.
+'''
+    readme.write_text(text)
