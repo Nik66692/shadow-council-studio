@@ -1,7 +1,7 @@
 use crate::{AppError, sha256_file};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
-use serde_json::{Map, Value};
+use serde_json::Value;
 use sha2::{Digest, Sha256};
 use sqlx::{QueryBuilder, Row, Sqlite, SqlitePool};
 use std::{
@@ -308,7 +308,7 @@ pub async fn run_integrity_check(pool: &SqlitePool) -> Result<DatabaseIntegrityR
         .map(|row| row.try_get(0))
         .collect::<Result<Vec<String>, sqlx::Error>>()?;
     Ok(DatabaseIntegrityReport {
-        ok: messages.len() == 1 && messages[0].eq_ignore_ascii_case("ok"),
+        ok: matches!(messages.as_slice(), [message] if message.eq_ignore_ascii_case("ok")),
         checked_at: Utc::now().to_rfc3339(),
         messages,
     })
@@ -538,8 +538,9 @@ pub async fn export_table(
         }
         let fetched = page.rows.len();
         all_rows.extend(page.rows);
-        if fetched < usize::try_from(MAX_PAGE_SIZE).unwrap_or(100)
-            || all_rows.len() >= usize::try_from(page.total_count.max(0)).unwrap_or(0)
+        let expected_total = usize::try_from(page.total_count.max(0)).unwrap_or(usize::MAX);
+        if fetched < MAX_PAGE_SIZE as usize
+            || all_rows.len() >= expected_total
             || all_rows.len() >= MAX_EXPORT_ROWS
         {
             break;
