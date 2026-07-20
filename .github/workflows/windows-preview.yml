@@ -50,7 +50,7 @@ jobs:
       - name: Upload Windows preview
         uses: actions/upload-artifact@v4
         with:
-          name: shadow-council-studio-windows-preview-0.3.0
+          name: shadow-council-studio-windows-preview-0.3.1
           path: |
             apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
             apps/desktop/src-tauri/target/release/bundle/nsis/SHA256SUMS.txt
