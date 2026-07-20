@@ -39,6 +39,22 @@ const emptyReview: CanonImportReviewSnapshot = {
   importedNow: false,
 };
 
+export function messageFromError(cause: unknown, fallback: string): string {
+  if (cause instanceof Error && cause.message.trim()) return cause.message;
+  if (typeof cause === "string" && cause.trim()) return cause;
+  if (cause && typeof cause === "object") {
+    const message = (cause as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+    try {
+      const serialized = JSON.stringify(cause);
+      if (serialized && serialized !== "{}") return serialized;
+    } catch {
+      // Fall through to the caller-provided message.
+    }
+  }
+  return fallback;
+}
+
 export function App() {
   const [active, setActive] = useState("Dashboard");
   const [health, setHealth] = useState<HealthStatus | null>(null);
@@ -74,11 +90,7 @@ export function App() {
       setHealth(await invoke<HealthStatus>("get_system_health"));
     } catch (cause: unknown) {
       console.error(cause);
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Importazione canonica non riuscita.",
-      );
+      setError(messageFromError(cause, "Importazione canonica non riuscita."));
     } finally {
       setImportRunning(false);
     }
