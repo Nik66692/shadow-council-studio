@@ -130,9 +130,9 @@ export function App() {
             onImport={runImport}
           />
         )}
-        {health &&
-          active !== "Dashboard" &&
-          active !== "Import canonico" && <NotImplemented title={active} />}
+        {health && active !== "Dashboard" && active !== "Import canonico" && (
+          <NotImplemented title={active} />
+        )}
       </section>
     </main>
   );
