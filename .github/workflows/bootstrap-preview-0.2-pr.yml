@@ -1,0 +1,59 @@
+name: Bootstrap Preview 0.2 PR
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: github.head_ref == 'release/preview-0.2.0'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/preview-0.2.0
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+          components: rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - name: Apply release changes
+        run: python3 .github/scripts/bootstrap_preview_0_2.py
+      - name: Restore Windows icon
+        shell: bash
+        run: |
+          git fetch origin release/preview-0.1.0:refs/remotes/origin/release/preview-0.1.0
+          git show origin/release/preview-0.1.0:apps/desktop/src-tauri/icons/icon.ico > apps/desktop/src-tauri/icons/icon.ico
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Update Cargo lockfile
+        run: cargo metadata --manifest-path apps/desktop/src-tauri/Cargo.toml --format-version 1 > /dev/null
+      - name: Format sources
+        run: |
+          pnpm format
+          cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - name: Commit release package
+        shell: bash
+        run: |
+          rm .github/workflows/bootstrap-preview-0.2.yml
+          rm .github/workflows/bootstrap-preview-0.2-pr.yml
+          rm .github/scripts/bootstrap_preview_0_2.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "release: package Windows Preview 0.2"
+          git push origin HEAD:release/preview-0.2.0
