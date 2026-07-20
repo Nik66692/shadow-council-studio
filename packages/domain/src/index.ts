@@ -63,7 +63,7 @@ export type ProjectMetadata = z.infer<typeof ProjectMetadataSchema>;
 
 export const HealthStatusSchema = z.object({
   projectName: z.literal("Shadow Council Studio"),
-  developmentStage: z.literal("Foundation"),
+  developmentStage: z.enum(["Foundation", "Phase 1"]),
   databaseConnected: z.boolean(),
   migrationsApplied: z.boolean(),
   sourceOfTruth: z.object({
@@ -80,3 +80,60 @@ export const HealthStatusSchema = z.object({
   diagnostics: z.array(z.string()),
 });
 export type HealthStatus = z.infer<typeof HealthStatusSchema>;
+
+export const CanonBlockKindSchema = z.enum([
+  "HEADING",
+  "PARAGRAPH",
+  "LIST_ITEM",
+  "TABLE_TEXT",
+]);
+export type CanonBlockKind = z.infer<typeof CanonBlockKindSchema>;
+
+export const CanonImportRunSchema = z.object({
+  id: z.string().min(1),
+  sourceDocumentId: z.string().min(1),
+  sourceVersion: z.string().min(1),
+  sourceSha256: z.string().regex(/^[a-f0-9]{64}$/),
+  importerVersion: z.string().min(1),
+  status: z.literal("COMPLETED_PENDING_REVIEW"),
+  startedAt: z.string().datetime(),
+  completedAt: z.string().datetime(),
+  rawBlockCount: z.number().int().nonnegative(),
+  draftCount: z.number().int().nonnegative(),
+  warningCount: z.number().int().nonnegative(),
+});
+export type CanonImportRun = z.infer<typeof CanonImportRunSchema>;
+
+export const CanonReviewDraftSchema = z.object({
+  id: z.string().min(1),
+  rawBlockId: z.string().min(1),
+  sourceAnchor: z.string().min(1),
+  sourcePart: z.literal("word/document.xml"),
+  blockIndex: z.number().int().nonnegative(),
+  blockKind: CanonBlockKindSchema,
+  styleName: z.string().nullable(),
+  originalText: z.string(),
+  textSha256: z.string().regex(/^[a-f0-9]{64}$/),
+  reviewStatus: z.literal("PENDING_HUMAN_REVIEW"),
+  canonicalStatus: CanonicalStatusSchema.nullable(),
+});
+export type CanonReviewDraft = z.infer<typeof CanonReviewDraftSchema>;
+
+export const CanonImportWarningSchema = z.object({
+  id: z.string().min(1),
+  sourceAnchor: z.string().nullable(),
+  warningCode: z.string().min(1),
+  message: z.string().min(1),
+  createdAt: z.string().datetime(),
+});
+export type CanonImportWarning = z.infer<typeof CanonImportWarningSchema>;
+
+export const CanonImportReviewSnapshotSchema = z.object({
+  run: CanonImportRunSchema.nullable(),
+  drafts: z.array(CanonReviewDraftSchema),
+  warnings: z.array(CanonImportWarningSchema),
+  importedNow: z.boolean(),
+});
+export type CanonImportReviewSnapshot = z.infer<
+  typeof CanonImportReviewSnapshotSchema
+>;
