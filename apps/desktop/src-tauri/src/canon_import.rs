@@ -1,7 +1,7 @@
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::{FromRow, SqlitePool};
-use std::{fs, path::Path, process::Command};
+use std::{path::Path, process::Command};
 
 use crate::{
     AppError, SourceDocument, read_canon_source_manifest, sha256_file, upsert_source_document,
@@ -582,6 +582,7 @@ pub async fn import_source(
 mod tests {
     use super::*;
     use crate::{connect, run_migrations};
+    use std::fs;
     use tempfile::tempdir;
 
     fn test_manifest() -> crate::CanonSourceManifest {
