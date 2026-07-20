@@ -1,10 +1,6 @@
 name: Apply Windows Canon Import Hotfix
 
 on:
-  push:
-    branches: [hotfix/windows-canon-import-0.3.1]
-    paths:
-      - ".github/workflows/apply-windows-import-hotfix.yml"
   pull_request:
     branches: [main]
     paths:
@@ -15,7 +11,6 @@ permissions:
 
 jobs:
   apply-hotfix:
-    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
