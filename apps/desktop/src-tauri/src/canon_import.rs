@@ -1,15 +1,10 @@
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 use sqlx::{FromRow, SqlitePool};
-use std::{
-    fs,
-    path::Path,
-    process::Command,
-};
+use std::{fs, path::Path, process::Command};
 
 use crate::{
-    read_canon_source_manifest, sha256_file, upsert_source_document, AppError,
-    SourceDocument,
+    AppError, SourceDocument, read_canon_source_manifest, sha256_file, upsert_source_document,
 };
 
 const IMPORTER_VERSION: &str = "canon-docx-importer/1.0.0";
@@ -527,9 +522,7 @@ async fn persist_import(
         .ok_or_else(|| AppError::CanonManifest("import run was not persisted".into()))
 }
 
-pub async fn get_latest_review(
-    pool: &SqlitePool,
-) -> Result<CanonImportReviewSnapshot, AppError> {
+pub async fn get_latest_review(pool: &SqlitePool) -> Result<CanonImportReviewSnapshot, AppError> {
     let run = sqlx::query_as::<_, CanonImportRun>(
         "SELECT id,source_document_id,source_version,source_sha256,importer_version,status,started_at,completed_at,raw_block_count,draft_count,warning_count \
          FROM canon_import_runs ORDER BY completed_at DESC,id DESC LIMIT 1",

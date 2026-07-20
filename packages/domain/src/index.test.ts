@@ -53,8 +53,7 @@ describe("domain foundation", () => {
         {
           id: "canon-draft-123",
           rawBlockId: "canon-block-123",
-          sourceAnchor:
-            "sc://canon/1.3/hash/word/document.xml/heading/000000",
+          sourceAnchor: "sc://canon/1.3/hash/word/document.xml/heading/000000",
           sourcePart: "word/document.xml",
           blockIndex: 0,
           blockKind: "HEADING",
