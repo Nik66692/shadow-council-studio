@@ -50,9 +50,7 @@ export const CanonReviewDraftItemSchema = z.object({
   reviewStatus: CanonDraftReviewStatusSchema,
   canonicalStatus: CanonEntryCanonicalStatusSchema.nullable(),
 });
-export type CanonReviewDraftItem = z.infer<
-  typeof CanonReviewDraftItemSchema
->;
+export type CanonReviewDraftItem = z.infer<typeof CanonReviewDraftItemSchema>;
 
 export const CanonEntrySourceSchema = z.object({
   draftId: z.string().min(1),
@@ -90,11 +88,7 @@ export const CanonReviewDecisionSchema = z.object({
   rationale: z.string().min(1),
   decidedAt: z.string().datetime(),
   previousReviewStatus: z.literal("PENDING_HUMAN_REVIEW"),
-  resultingReviewStatus: z.enum([
-    "APPROVED",
-    "MERGED_INTO_ENTRY",
-    "REJECTED",
-  ]),
+  resultingReviewStatus: z.enum(["APPROVED", "MERGED_INTO_ENTRY", "REJECTED"]),
 });
 export type CanonReviewDecision = z.infer<typeof CanonReviewDecisionSchema>;
 

@@ -592,8 +592,7 @@ mod tests {
         let pool = connect("sqlite::memory:").await.unwrap();
         run_migrations(&pool).await.unwrap();
         let root = tempdir().unwrap();
-        let source_path =
-            "docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx";
+        let source_path = "docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx";
         let source_file = root.path().join(source_path);
         fs::create_dir_all(source_file.parent().unwrap()).unwrap();
         fs::write(&source_file, "canon").unwrap();

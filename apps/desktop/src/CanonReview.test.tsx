@@ -18,8 +18,7 @@ const workspace = {
       id: "draft-1",
       importRunId: "run-1",
       rawBlockId: "block-1",
-      sourceAnchor:
-        "sc://canon/1.3/hash/word/document.xml/paragraph/000001",
+      sourceAnchor: "sc://canon/1.3/hash/word/document.xml/paragraph/000001",
       sourcePart: "word/document.xml",
       blockIndex: 1,
       blockKind: "PARAGRAPH",

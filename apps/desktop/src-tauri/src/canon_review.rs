@@ -179,7 +179,9 @@ fn validate_draft_ids(ids: &[String]) -> Result<Vec<String>, AppError> {
     for id in ids {
         let trimmed = id.trim();
         if trimmed.is_empty() || !unique.insert(trimmed.to_owned()) {
-            return Err(review_error("draft identifiers must be unique and non-empty"));
+            return Err(review_error(
+                "draft identifiers must be unique and non-empty",
+            ));
         }
         validated.push(trimmed.to_owned());
     }
@@ -336,17 +338,10 @@ pub async fn approve_canon_drafts(
 ) -> Result<CanonReviewWorkspace, AppError> {
     let draft_ids = validate_draft_ids(&request.draft_ids)?;
     let title = normalized_nonempty(&request.title, "title", MAX_TITLE_LENGTH)?;
-    let normalized_text = normalized_nonempty(
-        &request.normalized_text,
-        "normalized text",
-        MAX_TEXT_LENGTH,
-    )?;
+    let normalized_text =
+        normalized_nonempty(&request.normalized_text, "normalized text", MAX_TEXT_LENGTH)?;
     let reviewer = normalized_nonempty(&request.reviewer, "reviewer", MAX_REVIEWER_LENGTH)?;
-    let rationale = normalized_nonempty(
-        &request.rationale,
-        "rationale",
-        MAX_RATIONALE_LENGTH,
-    )?;
+    let rationale = normalized_nonempty(&request.rationale, "rationale", MAX_RATIONALE_LENGTH)?;
     if !ENTRY_KINDS.contains(&request.entry_kind.as_str()) {
         return Err(review_error("unsupported canon entry kind"));
     }
@@ -417,10 +412,8 @@ pub async fn approve_canon_drafts(
         .execute(&mut *transaction)
         .await?;
 
-        let decision_id = deterministic_id(
-            "canon-decision-",
-            &["APPROVED", &entry_id, &draft.id, &now],
-        );
+        let decision_id =
+            deterministic_id("canon-decision-", &["APPROVED", &entry_id, &draft.id, &now]);
         sqlx::query(
             "INSERT INTO canon_review_decisions \
              (id,decision_type,draft_id,entry_id,reviewer,rationale,decided_at,previous_review_status,resulting_review_status) \
@@ -447,11 +440,7 @@ pub async fn reject_canon_drafts(
 ) -> Result<CanonReviewWorkspace, AppError> {
     let draft_ids = validate_draft_ids(&request.draft_ids)?;
     let reviewer = normalized_nonempty(&request.reviewer, "reviewer", MAX_REVIEWER_LENGTH)?;
-    let rationale = normalized_nonempty(
-        &request.rationale,
-        "rationale",
-        MAX_RATIONALE_LENGTH,
-    )?;
+    let rationale = normalized_nonempty(&request.rationale, "rationale", MAX_RATIONALE_LENGTH)?;
     let drafts = load_drafts_by_ids(pool, &draft_ids).await?;
     validate_reviewable_drafts(&draft_ids, &drafts)?;
     let now = Utc::now().to_rfc3339();
@@ -472,10 +461,8 @@ pub async fn reject_canon_drafts(
             ));
         }
 
-        let decision_id = deterministic_id(
-            "canon-decision-",
-            &["REJECTED", &draft.id, &reviewer, &now],
-        );
+        let decision_id =
+            deterministic_id("canon-decision-", &["REJECTED", &draft.id, &reviewer, &now]);
         sqlx::query(
             "INSERT INTO canon_review_decisions \
              (id,decision_type,draft_id,entry_id,reviewer,rationale,decided_at,previous_review_status,resulting_review_status) \
@@ -575,10 +562,12 @@ mod tests {
         assert_eq!(workspace.entries[0].sources.len(), 2);
         assert_eq!(workspace.entries[0].sources[0].original_text, "Testo A");
         assert_eq!(workspace.entries[0].sources[1].original_text, "Testo B");
-        assert!(workspace
-            .drafts
-            .iter()
-            .all(|draft| draft.review_status == "MERGED_INTO_ENTRY"));
+        assert!(
+            workspace
+                .drafts
+                .iter()
+                .all(|draft| draft.review_status == "MERGED_INTO_ENTRY")
+        );
     }
 
     #[tokio::test]

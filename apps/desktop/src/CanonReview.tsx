@@ -7,10 +7,7 @@ import type {
   CanonicalStatus,
   RejectCanonDraftsRequest,
 } from "@shadow-council/domain";
-import {
-  canonEntryKinds,
-  canonicalStatuses,
-} from "@shadow-council/domain";
+import { canonEntryKinds, canonicalStatuses } from "@shadow-council/domain";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import "./CanonReview.css";
@@ -206,8 +203,9 @@ export function CanonReview() {
           <p className="eyebrow">APPROVAZIONE UMANA CONTROLLATA</p>
           <h2>Canon Review</h2>
           <p>
-            Il testo importato resta immutabile. Solo una decisione esplicita crea
-            una voce canonica o rifiuta una bozza, mantenendo provenienza e storico.
+            Il testo importato resta immutabile. Solo una decisione esplicita
+            crea una voce canonica o rifiuta una bozza, mantenendo provenienza e
+            storico.
           </p>
         </div>
         <button className="primary-action" onClick={() => void loadWorkspace()}>
@@ -237,7 +235,10 @@ export function CanonReview() {
               label="Fonti approvate"
               value={workspace.summary.approvedCount}
             />
-            <Summary label="Rifiutate" value={workspace.summary.rejectedCount} />
+            <Summary
+              label="Rifiutate"
+              value={workspace.summary.rejectedCount}
+            />
             <Summary
               label="Voci canoniche"
               value={workspace.summary.entryCount}
@@ -282,7 +283,9 @@ export function CanonReview() {
                     <select
                       value={statusFilter}
                       onChange={(event) =>
-                        setStatusFilter(event.target.value as ReviewStatusFilter)
+                        setStatusFilter(
+                          event.target.value as ReviewStatusFilter,
+                        )
                       }
                     >
                       <option value="ALL">Tutti</option>
@@ -322,7 +325,9 @@ export function CanonReview() {
                 {filteredDrafts.length === 0 ? (
                   <div className="empty-state">
                     <h3>Nessuna bozza corrispondente</h3>
-                    <p>Esegui prima l'import canonico oppure modifica i filtri.</p>
+                    <p>
+                      Esegui prima l'import canonico oppure modifica i filtri.
+                    </p>
                   </div>
                 ) : (
                   <ol className="review-draft-list">
@@ -393,7 +398,9 @@ export function CanonReview() {
                     <select
                       value={canonicalStatus}
                       onChange={(event) =>
-                        setCanonicalStatus(event.target.value as CanonicalStatus)
+                        setCanonicalStatus(
+                          event.target.value as CanonicalStatus,
+                        )
                       }
                     >
                       {canonicalStatuses.map((status) => (
