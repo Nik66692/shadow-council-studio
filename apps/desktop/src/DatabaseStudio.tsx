@@ -750,10 +750,18 @@ function RecordInspector({
       )}
 
       {table.name === "project_metadata" && (
-        <MetadataEditor row={row} onComplete={onMutationComplete} />
+        <MetadataEditor
+          key={String(row.key ?? "")}
+          row={row}
+          onComplete={onMutationComplete}
+        />
       )}
       {table.name === "canon_normalized_drafts" && (
-        <ReviewNoteEditor row={row} onComplete={onMutationComplete} />
+        <ReviewNoteEditor
+          key={String(row.id ?? "")}
+          row={row}
+          onComplete={onMutationComplete}
+        />
       )}
     </section>
   );

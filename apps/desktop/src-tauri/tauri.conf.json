@@ -1,6 +1,6 @@
 {
   "productName": "Shadow Council Studio",
-  "version": "0.0.0",
+  "version": "0.2.0",
   "identifier": "studio.shadowcouncil.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -10,9 +10,25 @@
   },
   "app": {
     "windows": [
-      { "title": "Shadow Council Studio", "width": 1100, "height": 760 }
+      {
+        "title": "Shadow Council Studio",
+        "width": 1280,
+        "height": 820,
+        "minWidth": 980,
+        "minHeight": 680
+      }
     ],
-    "security": { "csp": null }
+    "security": {
+      "csp": null
+    }
   },
-  "bundle": { "active": false, "targets": "all", "icon": [] }
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "icon": ["icons/icon.ico", "icons/icon.png"],
+    "resources": {
+      "../../../docs/canon/source/manifest.json": "docs/canon/source/manifest.json",
+      "../../../docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx": "docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx"
+    }
+  }
 }

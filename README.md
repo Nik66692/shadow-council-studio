@@ -91,3 +91,7 @@ Sprint 0 foundation is complete. Phase 1 deterministic canon import is active. P
 - Canon: `docs/canon/README.md`
 - Data model: `docs/data-model/README.md`
 - Governance: `docs/project/SOURCE_HIERARCHY.md`
+
+## Windows Preview 0.2
+
+Preview 0.2 packages the Phase 1 canonical importer and Database Studio as an unsigned local-first Windows NSIS installer. The installed application uses the immutable bundled canon manifest and Source of Truth v1.3; development builds may use repository resources. Database Studio provides dynamic schema discovery, relationship navigation, paginated browsing, safe exports, integrity checks, backups and audited allowlisted edits. Windows may show SmartScreen because internal previews are not code-signed.
