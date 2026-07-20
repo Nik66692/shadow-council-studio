@@ -38,9 +38,10 @@ export function CanonReview() {
   const [search, setSearch] = useState("");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [title, setTitle] = useState("");
-  const [entryKind, setEntryKind] = useState<CanonEntryKind>("RULE");
-  const [canonicalStatus, setCanonicalStatus] =
-    useState<CanonicalStatus>("ALPHA_DA_TESTARE");
+  const [entryKind, setEntryKind] = useState<CanonEntryKind | "">("");
+  const [canonicalStatus, setCanonicalStatus] = useState<CanonicalStatus | "">(
+    "",
+  );
   const [normalizedText, setNormalizedText] = useState("");
   const [reviewer, setReviewer] = useState("Niccolò");
   const [rationale, setRationale] = useState("");
@@ -107,8 +108,8 @@ export function CanonReview() {
   const resetDecisionForm = () => {
     setSelectedIds(new Set<string>());
     setTitle("");
-    setEntryKind("RULE");
-    setCanonicalStatus("ALPHA_DA_TESTARE");
+    setEntryKind("");
+    setCanonicalStatus("");
     setNormalizedText("");
     setRationale("");
   };
@@ -135,6 +136,10 @@ export function CanonReview() {
   };
 
   const approve = async () => {
+    if (!entryKind || !canonicalStatus) {
+      setError("Seleziona esplicitamente categoria e stato canonico.");
+      return;
+    }
     const request: ApproveCanonDraftsRequest = {
       draftIds: selectedDrafts.map((draft) => draft.id),
       title,
@@ -388,6 +393,9 @@ export function CanonReview() {
                         setEntryKind(event.target.value as CanonEntryKind)
                       }
                     >
+                      <option value="" disabled>
+                        Seleziona categoria
+                      </option>
                       {canonEntryKinds.map((kind) => (
                         <option key={kind}>{kind}</option>
                       ))}
@@ -403,6 +411,9 @@ export function CanonReview() {
                         )
                       }
                     >
+                      <option value="" disabled>
+                        Seleziona stato
+                      </option>
                       {canonicalStatuses.map((status) => (
                         <option key={status}>{status}</option>
                       ))}
@@ -439,6 +450,8 @@ export function CanonReview() {
                       saving ||
                       selectedDrafts.length === 0 ||
                       !title.trim() ||
+                      !entryKind ||
+                      !canonicalStatus ||
                       !normalizedText.trim() ||
                       !reviewer.trim() ||
                       !rationale.trim()

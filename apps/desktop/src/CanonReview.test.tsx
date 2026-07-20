@@ -44,4 +44,9 @@ it("loads the controlled review queue", async () => {
   ).toBeInTheDocument();
   expect(screen.getByText("Regola estratta")).toBeInTheDocument();
   expect(screen.getByText("1 elementi visibili")).toBeInTheDocument();
+  expect(screen.getByLabelText("Categoria")).toHaveValue("");
+  expect(screen.getByLabelText("Stato canonico")).toHaveValue("");
+  expect(
+    screen.getByRole("button", { name: "Approva nel canon" }),
+  ).toBeDisabled();
 });

@@ -236,6 +236,10 @@ fn validate_reviewable_drafts(
             "one or more selected drafts have already been reviewed",
         ));
     }
+    Ok(())
+}
+
+fn validate_same_import_run(drafts: &[CanonReviewDraftItem]) -> Result<(), AppError> {
     let import_runs: HashSet<&str> = drafts
         .iter()
         .map(|draft| draft.import_run_id.as_str())
@@ -351,6 +355,7 @@ pub async fn approve_canon_drafts(
 
     let drafts = load_drafts_by_ids(pool, &draft_ids).await?;
     validate_reviewable_drafts(&draft_ids, &drafts)?;
+    validate_same_import_run(&drafts)?;
     let now = Utc::now().to_rfc3339();
     let joined_ids = drafts
         .iter()
@@ -590,6 +595,31 @@ mod tests {
         assert_eq!(workspace.summary.rejected_count, 1);
         assert!(workspace.entries.is_empty());
         assert_eq!(workspace.recent_decisions[0].decision_type, "REJECTED");
+    }
+
+    #[test]
+    fn cross_run_drafts_are_reviewable_but_not_mergeable() {
+        let draft = |id: &str, import_run_id: &str| CanonReviewDraftItem {
+            id: id.into(),
+            import_run_id: import_run_id.into(),
+            raw_block_id: format!("block-{id}"),
+            source_anchor: format!("sc://test/{id}"),
+            source_part: "word/document.xml".into(),
+            block_index: 0,
+            block_kind: "PARAGRAPH".into(),
+            style_name: None,
+            original_text: id.into(),
+            text_sha256: "a".repeat(64),
+            review_status: "PENDING_HUMAN_REVIEW".into(),
+            canonical_status: None,
+        };
+        let drafts = vec![draft("a", "run-a"), draft("b", "run-b")];
+        let ids = drafts
+            .iter()
+            .map(|draft| draft.id.clone())
+            .collect::<Vec<_>>();
+        assert!(validate_reviewable_drafts(&ids, &drafts).is_ok());
+        assert!(validate_same_import_run(&drafts).is_err());
     }
 
     #[tokio::test]
