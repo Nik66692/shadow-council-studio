@@ -4,13 +4,21 @@
 
 Goal: testable foundation. Scope: tooling, docs, domain contracts, SQLite metadata, diagnostics and CI. Acceptance completed through merged PR #1 with all quality gates passing.
 
-## Phase 1: canonical data model and deterministic import — ACTIVE
+## Phase 1: canonical data model and deterministic import — COMPLETE
 
-Goal: human-reviewable import pipeline. Scope: manifest-selected DOCX extraction, deterministic source anchors, raw evidence, normalized review drafts, visible warnings, SQLite persistence and read-only review UI. Exclusions: automatic interpretation, canonical promotion and editing. Dependencies: Sprint 0. Acceptance: repeatable imports and traceable review evidence.
+Goal: human-reviewable import pipeline. Scope: manifest-selected DOCX extraction, deterministic source anchors, raw evidence, normalized review drafts, visible warnings, SQLite persistence and read-only review UI. Exclusions: automatic interpretation, canonical promotion and editing. Dependencies: Sprint 0. Acceptance completed through merged PR #3.
+
+## Database Studio 0.2 — ACTIVE
+
+Goal: make the local relational model visible and safely manageable. Scope: dynamic schema inspection, ER-style relationship navigation, paginated data browsing, JSON/CSV exports, integrity checks, backups and allowlisted audited metadata/review-note edits. Exclusions: arbitrary SQL writes, schema editing, canon promotion and card editing. Dependencies: Phase 1.
+
+## Phase 1.5: controlled canon review
+
+Goal: approve, reject, group and annotate imported evidence without losing provenance. Scope: explicit human review workflow and append-only decisions. Exclusions: automatic canonical promotion. Dependencies: Phase 1 and Database Studio safety boundaries.
 
 ## Phase 2: read-only living Codex
 
-Goal: browse human-approved canon. Scope: source-linked read-only UI. Exclusions: editing. Dependencies: Phase 1 plus an explicit human-approval model. Acceptance: every displayed canonical entry links to approved source evidence.
+Goal: browse human-approved canon. Scope: source-linked read-only UI. Exclusions: editing. Dependencies: Phase 1.5. Acceptance: every displayed canonical entry links to approved source evidence.
 
 ## Phase 3: card database and card versioning
 
