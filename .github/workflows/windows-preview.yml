@@ -15,9 +15,59 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  bootstrap-preview-0-3:
+    if: github.event_name == 'pull_request' && github.head_ref == 'release/preview-0.3.0'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: release/preview-0.3.0
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+          components: rustfmt
+      - name: Apply Preview 0.3 metadata
+        run: python3 .github/scripts/bootstrap_preview_0_3.py
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Update Cargo lockfile
+        run: cargo metadata --manifest-path apps/desktop/src-tauri/Cargo.toml --format-version 1 > /dev/null
+      - name: Format release files
+        run: |
+          pnpm format
+          cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - name: Commit Preview 0.3
+        shell: bash
+        run: |
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/windows-preview.yml
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('.github/workflows/windows-preview.yml')
+          text = path.read_text()
+          expected = 'name: shadow-council-studio-windows-preview-0.2.0'
+          if expected not in text:
+              raise SystemExit('Expected Preview 0.2 artifact name not found')
+          path.write_text(text.replace(expected, 'name: shadow-council-studio-windows-preview-0.3.0', 1))
+          PY
+          rm .github/scripts/bootstrap_preview_0_3.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "release: package Windows Preview 0.3"
+          git push origin HEAD:release/preview-0.3.0
+
   build-windows-preview:
     runs-on: windows-latest
     steps:
