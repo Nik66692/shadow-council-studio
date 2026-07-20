@@ -1,6 +1,7 @@
 export const sprint0Sections = [
   "Dashboard",
   "Import canonico",
+  "Canon Review",
   "Database Studio",
   "Codex",
   "Carte",
