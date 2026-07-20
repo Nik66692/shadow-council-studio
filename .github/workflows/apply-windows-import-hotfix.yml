@@ -41,10 +41,16 @@ jobs:
       - name: Commit hotfix
         shell: bash
         run: |
-          rm .github/workflows/apply-windows-import-hotfix.yml
-          rm .github/scripts/apply_windows_import_hotfix.py
+          git restore .github/workflows/windows-preview.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -A
+          git add README.md \
+            apps/desktop/package.json \
+            apps/desktop/src/App.tsx \
+            apps/desktop/src/App.test.tsx \
+            apps/desktop/src-tauri/Cargo.toml \
+            apps/desktop/src-tauri/Cargo.lock \
+            apps/desktop/src-tauri/tauri.conf.json \
+            apps/desktop/src-tauri/src/canon_import.rs
           git commit -m "fix: read canonical DOCX natively on Windows"
           git push origin HEAD:hotfix/windows-canon-import-0.3.1
