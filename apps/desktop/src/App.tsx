@@ -5,11 +5,12 @@ import type {
 import { sprint0Sections } from "@shadow-council/ui";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
+import { CanonReview } from "./CanonReview";
 import { DatabaseStudio } from "./DatabaseStudio";
 
 const fallback: HealthStatus = {
   projectName: "Shadow Council Studio",
-  developmentStage: "Phase 1",
+  developmentStage: "Phase 1.5",
   databaseConnected: false,
   migrationsApplied: false,
   sourceOfTruth: {
@@ -18,7 +19,12 @@ const fallback: HealthStatus = {
     sha256: null,
     canonVersion: null,
   },
-  modulesImplemented: ["Dashboard", "Import canonico", "Database Studio"],
+  modulesImplemented: [
+    "Dashboard",
+    "Import canonico",
+    "Canon Review",
+    "Database Studio",
+  ],
   nextRecommendedPhase:
     "Esegui l'app desktop Tauri per accedere al database SQLite locale.",
   diagnostics: [
@@ -98,7 +104,7 @@ export function App() {
     <main className="app">
       <aside>
         <h1>Shadow Council Studio</h1>
-        <p className="phase-badge">Phase 1 · Database Studio 0.2</p>
+        <p className="phase-badge">Phase 1.5 · Canon Review</p>
         <nav aria-label="Sezioni">
           <ul>
             {sprint0Sections.map((section) => (
@@ -131,10 +137,12 @@ export function App() {
             onImport={runImport}
           />
         )}
+        {health && active === "Canon Review" && <CanonReview />}
         {health && active === "Database Studio" && <DatabaseStudio />}
         {health &&
           active !== "Dashboard" &&
           active !== "Import canonico" &&
+          active !== "Canon Review" &&
           active !== "Database Studio" && <NotImplemented title={active} />}
       </section>
     </main>
@@ -281,10 +289,10 @@ function CanonImportReview({
           )}
 
           <section>
-            <h3>Bozze in attesa di revisione umana</h3>
+            <h3>Bozze estratte</h3>
             <p>
-              Testo italiano conservato come estratto. Stato canonico non
-              assegnato.
+              Testo italiano conservato come estratto. Usa Canon Review per
+              approvare, unire o rifiutare le bozze.
             </p>
             <ol className="draft-list">
               {review.drafts.map((draft) => (
@@ -323,7 +331,7 @@ function NotImplemented({ title }: { title: string }) {
   return (
     <article>
       <h2>{title}</h2>
-      <p>Sezione non ancora implementata nella Phase 1.</p>
+      <p>Sezione non ancora implementata nella roadmap corrente.</p>
     </article>
   );
 }
