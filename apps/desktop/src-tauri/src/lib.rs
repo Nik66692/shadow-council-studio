@@ -173,8 +173,23 @@ pub(crate) fn read_canon_source_manifest(root: &Path) -> Result<CanonSourceManif
     Ok(manifest)
 }
 
-fn repo_root() -> PathBuf {
+fn development_repo_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..")
+}
+
+fn select_content_root(development_root: PathBuf, resource_root: Option<PathBuf>) -> PathBuf {
+    if development_root
+        .join(SOURCE_MANIFEST_RELATIVE_PATH)
+        .is_file()
+    {
+        development_root
+    } else {
+        resource_root.unwrap_or(development_root)
+    }
+}
+
+fn content_root(app: &tauri::AppHandle) -> PathBuf {
+    select_content_root(development_repo_root(), app.path().resource_dir().ok())
 }
 
 pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus, AppError> {
@@ -319,13 +334,15 @@ async fn open_app_pool(app: &tauri::AppHandle) -> Result<SqlitePool, AppError> {
 #[tauri::command]
 async fn get_system_health(app: tauri::AppHandle) -> Result<HealthStatus, AppError> {
     let pool = open_app_pool(&app).await?;
-    build_health(&pool, &repo_root()).await
+    let root = content_root(&app);
+    build_health(&pool, &root).await
 }
 
 #[tauri::command]
 async fn run_canon_import(app: tauri::AppHandle) -> Result<CanonImportReviewSnapshot, AppError> {
     let pool = open_app_pool(&app).await?;
-    import_source(&pool, &repo_root()).await
+    let root = content_root(&app);
+    import_source(&pool, &root).await
 }
 
 #[tauri::command]
@@ -363,6 +380,28 @@ mod tests {
             ),
         )
         .unwrap();
+    }
+
+    #[test]
+    fn content_root_prefers_repository_then_bundled_resources() {
+        let development = tempdir().unwrap();
+        let resources = tempdir().unwrap();
+        let development_root = development.path().to_path_buf();
+        let resource_root = resources.path().to_path_buf();
+
+        assert_eq!(
+            select_content_root(development_root.clone(), Some(resource_root.clone()),),
+            resource_root
+        );
+
+        let manifest = development_root.join(SOURCE_MANIFEST_RELATIVE_PATH);
+        fs::create_dir_all(manifest.parent().unwrap()).unwrap();
+        fs::write(manifest, "{}").unwrap();
+
+        assert_eq!(
+            select_content_root(development_root.clone(), Some(resource_root),),
+            development_root
+        );
     }
 
     #[tokio::test]
