@@ -103,6 +103,6 @@ Sprint 0 foundation, Phase 1 deterministic import and Database Studio are comple
 - Data model: `docs/data-model/README.md`
 - Governance: `docs/project/SOURCE_HIERARCHY.md`
 
-## Windows Preview 0.2
+## Windows Preview 0.3
 
-Preview 0.2 packages the Phase 1 canonical importer and Database Studio as an unsigned local-first Windows NSIS installer. The installed application uses the immutable bundled canon manifest and Source of Truth v1.3; development builds may use repository resources. Windows may show SmartScreen because internal previews are not code-signed.
+Preview 0.3 packages the deterministic canonical importer, Database Studio and controlled Canon Review as an unsigned local-first Windows NSIS installer. It includes explicit approval and rejection, ordered source provenance, the approved canon registry and immutable decision history. The installed application uses the bundled manifest and Source of Truth v1.3; development builds may use repository resources. Windows may show SmartScreen because internal previews are not code-signed.

@@ -1,6 +1,6 @@
 {
   "productName": "Shadow Council Studio",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "identifier": "studio.shadowcouncil.app",
   "build": {
     "beforeDevCommand": "pnpm dev",
