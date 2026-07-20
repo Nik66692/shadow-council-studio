@@ -426,6 +426,28 @@ mod tests {
         );
     }
 
+    #[test]
+    fn content_root_prefers_repository_then_bundled_resources() {
+        let development = tempdir().unwrap();
+        let resources = tempdir().unwrap();
+        let development_root = development.path().to_path_buf();
+        let resource_root = resources.path().to_path_buf();
+
+        assert_eq!(
+            select_content_root(development_root.clone(), Some(resource_root.clone()),),
+            resource_root
+        );
+
+        let manifest = development_root.join(SOURCE_MANIFEST_RELATIVE_PATH);
+        fs::create_dir_all(manifest.parent().unwrap()).unwrap();
+        fs::write(manifest, "{}").unwrap();
+
+        assert_eq!(
+            select_content_root(development_root.clone(), Some(resource_root),),
+            development_root
+        );
+    }
+
     #[tokio::test]
     async fn repository_insert_read_source_document() {
         let pool = connect("sqlite::memory:").await.unwrap();
