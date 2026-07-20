@@ -2,7 +2,7 @@
 
 Shadow Council Studio is a local-first desktop application for managing the lifecycle of the original tabletop card game Shadow Council.
 
-Current maturity: **Phase 1 — Canonical Import**.
+Current maturity: **Phase 1 — Canonical Import** with **Windows Preview 0.1** packaging in progress.
 
 Sprint 0 established the tested Tauri, React, Rust and SQLite foundation. Phase 1 adds deterministic extraction from the manifest-selected Source of Truth, import evidence stored in SQLite and a read-only human-review screen.
 
@@ -19,6 +19,19 @@ The application is not yet a card editor, approved living Codex, deck builder, p
 - prevents duplicate imports for the same source hash and importer version;
 - exposes a read-only review snapshot through typed Tauri commands;
 - never assigns canonical status automatically.
+
+## Windows Preview 0.1
+
+The Windows preview is an unsigned internal build produced by `.github/workflows/windows-preview.yml`.
+
+The installer bundles the immutable canonical manifest and the approved Source of Truth v1.3. Development builds prefer the repository copies; installed builds resolve the same paths from the Tauri resource directory. The SHA-256 check remains mandatory in both modes.
+
+The workflow uploads:
+
+- the NSIS `*-setup.exe` installer;
+- `SHA256SUMS.txt` for integrity verification.
+
+Because the preview is not code-signed, Windows SmartScreen may display an unknown-publisher warning. Review the checksum before installation and use the preview only as an internal development build. No updater, telemetry, cloud service, account or signing secret is included.
 
 ## Technology
 
@@ -67,6 +80,14 @@ pnpm check
 pnpm build
 ```
 
+A local Windows NSIS build additionally requires Tauri CLI 2.7.0:
+
+```sh
+cargo install tauri-cli --version 2.7.0 --locked
+cd apps/desktop/src-tauri
+cargo tauri build --bundles nsis
+```
+
 ## Source hierarchy
 
 See `docs/project/SOURCE_HIERARCHY.md`. `docs/canon/source/manifest.json` selects the approved current source. The current v1.3 file is `docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx`.
@@ -83,7 +104,7 @@ Local-first SQLite only. No telemetry, analytics, accounts, remote database, clo
 
 ## Roadmap summary
 
-Sprint 0 foundation is complete. Phase 1 deterministic canon import is active. Phase 2 will add a read-only living Codex over human-approved records. Phase 3 adds the card database and card versioning. See `docs/project/ROADMAP.md`.
+Sprint 0 foundation and Phase 1 deterministic canon import are complete. Preview 0.1 makes the Phase 1 application installable on Windows. Phase 1.5 will add controlled human approval; Phase 2 will add a read-only living Codex over approved records. Phase 3 adds the card database and card versioning. See `docs/project/ROADMAP.md`.
 
 ## Links
 
