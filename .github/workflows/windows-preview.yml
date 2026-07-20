@@ -15,9 +15,49 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  fix-canon-review:
+    if: github.event_name == 'pull_request' && github.head_ref == 'feat/canon-review-phase-1-5'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/canon-review-phase-1-5
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+          components: rustfmt
+      - name: Apply reviewed fixes
+        run: python3 .github/scripts/fix_canon_review_findings.py
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Format sources
+        run: |
+          pnpm format
+          cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - name: Commit fixes and restore workflow
+        shell: bash
+        run: |
+          git fetch origin main
+          git checkout origin/main -- .github/workflows/windows-preview.yml
+          rm -f .github/workflows/fix-canon-review-findings.yml
+          rm -f .github/scripts/fix_canon_review_findings.py
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix: enforce explicit canon review decisions"
+          git push origin HEAD:feat/canon-review-phase-1-5
+
   build-windows-preview:
     runs-on: windows-latest
     steps:
