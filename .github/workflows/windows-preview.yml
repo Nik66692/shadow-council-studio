@@ -15,37 +15,10 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  sync-cargo-lock:
-    if: github.event_name == 'pull_request' && github.head_ref == 'release/preview-0.3.0'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: release/preview-0.3.0
-          fetch-depth: 0
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: 1.88.0
-      - name: Regenerate Cargo lockfile metadata
-        run: cargo metadata --manifest-path apps/desktop/src-tauri/Cargo.toml --format-version 1 > /dev/null
-      - name: Commit Cargo lockfile
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add apps/desktop/src-tauri/Cargo.lock
-          if git diff --cached --quiet; then
-            echo "Cargo.lock is already synchronized"
-            exit 0
-          fi
-          git commit -m "release: synchronize Preview 0.3 Cargo lockfile"
-          git push origin HEAD:release/preview-0.3.0
-
   build-windows-preview:
-    if: github.event_name != 'pull_request' || github.head_ref != 'release/preview-0.3.0'
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
