@@ -9,7 +9,9 @@
 body {
   margin: 0;
 }
-button {
+button,
+input,
+textarea {
   font: inherit;
 }
 code,
@@ -73,6 +75,12 @@ button:disabled {
   border-left: 4px solid #d7a01f;
   padding: 0.75rem;
   background: #2a2111;
+}
+.success-message {
+  padding: 0.75rem;
+  border-left: 4px solid #7aa36d;
+  background: #172516;
+  overflow-wrap: anywhere;
 }
 dt {
   font-weight: 700;
@@ -169,11 +177,314 @@ details code {
   margin-top: 0.4rem;
   color: #b7ad91;
 }
+.database-studio {
+  max-width: none !important;
+}
+.database-location {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  background: #17150f;
+  border: 1px solid #4a412b;
+  border-radius: 0.35rem;
+}
+.database-layout {
+  display: grid;
+  grid-template-columns: 16rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+.table-sidebar {
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 0.75rem;
+  background: #191710;
+  border: 1px solid #4a412b;
+  border-radius: 0.35rem;
+}
+.table-sidebar ul {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0;
+  list-style: none;
+}
+.table-sidebar button {
+  display: grid;
+  gap: 0.2rem;
+  width: 100%;
+  padding: 0.65rem;
+  color: #ece7d5;
+  text-align: left;
+  background: #252117;
+  border: 1px solid #4a412b;
+  border-radius: 0.25rem;
+}
+.table-sidebar small,
+.definition-meta,
+.relationship-column small {
+  color: #aaa086;
+}
+.database-workspace {
+  min-width: 0;
+}
+.studio-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.studio-tabs button,
+.toolbar-actions button,
+.pagination button,
+.record-relations button,
+.maintenance-card button,
+.safe-editor button,
+.active-filter button {
+  padding: 0.55rem 0.75rem;
+  color: #ece7d5;
+  background: #282319;
+  border: 1px solid #6d5f37;
+  border-radius: 0.25rem;
+}
+.schema-view,
+.maintenance-view {
+  display: grid;
+  gap: 1rem;
+}
+.table-definition,
+.relationship-map,
+.record-inspector,
+.maintenance-card {
+  padding: 1rem;
+  background: #1d1a14;
+  border: 1px solid #4a412b;
+  border-radius: 0.35rem;
+}
+.definition-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+}
+.definition-meta {
+  display: grid;
+  gap: 0.25rem;
+  text-align: right;
+}
+.table-definition table,
+.data-grid {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table-definition th,
+.table-definition td,
+.data-grid th,
+.data-grid td {
+  padding: 0.55rem;
+  border: 1px solid #4a412b;
+  text-align: left;
+  vertical-align: top;
+}
+.table-definition th,
+.data-grid th {
+  background: #292419;
+}
+.table-definition pre {
+  max-width: 100%;
+  overflow: auto;
+  padding: 0.75rem;
+  background: #12110d;
+  border: 1px solid #3d3625;
+  white-space: pre-wrap;
+}
+.index-list {
+  display: grid;
+  gap: 0.35rem;
+}
+.relation-columns {
+  display: grid;
+  grid-template-columns: 1fr minmax(12rem, 0.75fr) 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+.relationship-column {
+  display: grid;
+  gap: 0.5rem;
+}
+.relationship-column button,
+.all-table-nodes button {
+  display: grid;
+  gap: 0.2rem;
+  padding: 0.75rem;
+  color: #ece7d5;
+  text-align: left;
+  background: #252117;
+  border: 1px solid #5d5131;
+  border-radius: 0.35rem;
+}
+.selected-table-node {
+  display: grid;
+  gap: 0.35rem;
+  padding: 1.25rem;
+  text-align: center;
+  background: #3a3118;
+  border: 2px solid #c7a94b;
+  border-radius: 0.5rem;
+}
+.all-table-nodes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.data-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.data-toolbar label {
+  display: grid;
+  flex: 1;
+  gap: 0.35rem;
+  max-width: 34rem;
+}
+.data-toolbar input,
+.safe-editor input,
+.safe-editor textarea {
+  width: 100%;
+  padding: 0.6rem;
+  color: #ece7d5;
+  background: #15130e;
+  border: 1px solid #6d5f37;
+  border-radius: 0.25rem;
+}
+.safe-editor textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: end;
+}
+.active-filter {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 0.75rem;
+  padding: 0.65rem;
+  background: #2a2519;
+  border: 1px solid #6d5f37;
+}
+.data-grid-wrapper {
+  max-height: 32rem;
+  overflow: auto;
+  border: 1px solid #4a412b;
+}
+.data-grid th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 0;
+}
+.data-grid th button {
+  width: 100%;
+  padding: 0.55rem;
+  color: #ece7d5;
+  text-align: left;
+  background: transparent;
+  border: 0;
+}
+.data-grid td {
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.data-grid tr:hover,
+.data-grid tr.selected {
+  background: #302918;
+  cursor: pointer;
+}
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.75rem 0;
+}
+.record-inspector dl {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  gap: 0.5rem;
+}
+.record-inspector dl div {
+  padding: 0.65rem;
+  background: #17150f;
+  border: 1px solid #3d3625;
+}
+.record-inspector dd {
+  margin: 0.35rem 0 0;
+}
+.record-relations,
+.safe-editor {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #4a412b;
+}
+.record-relations h4,
+.safe-editor h4,
+.safe-editor p {
+  flex-basis: 100%;
+  margin: 0;
+}
+.safe-editor input,
+.safe-editor textarea {
+  flex-basis: 100%;
+}
+.protected-field {
+  padding: 0.65rem;
+  border-left: 4px solid #8d7d54;
+  background: #242016;
+}
+.maintenance-view {
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+}
+.protected-card {
+  border-color: #7a6938;
+}
+@media (max-width: 1100px) {
+  .database-layout {
+    grid-template-columns: 1fr;
+  }
+  .table-sidebar {
+    position: static;
+    max-height: none;
+  }
+  .table-sidebar ul {
+    grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  }
+  .relation-columns {
+    grid-template-columns: 1fr;
+  }
+}
 @media (max-width: 900px) {
   .summary-grid {
     grid-template-columns: repeat(2, minmax(8rem, 1fr));
   }
-  .section-header {
+  .section-header,
+  .data-toolbar,
+  .definition-heading,
+  .active-filter {
     flex-direction: column;
   }
 }
@@ -190,5 +501,8 @@ details code {
   }
   .summary-grid {
     grid-template-columns: 1fr;
+  }
+  .pagination {
+    flex-wrap: wrap;
   }
 }
