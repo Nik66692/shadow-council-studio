@@ -1,5 +1,6 @@
 export const sprint0Sections = [
   "Dashboard",
+  "Import canonico",
   "Codex",
   "Carte",
   "Agende e Direttive",
