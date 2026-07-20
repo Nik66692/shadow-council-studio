@@ -1,0 +1,68 @@
+name: Database Studio Clippy Fix
+
+on:
+  push:
+    branches: [feat/database-studio-0.2]
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/database-studio-0.2
+          fetch-depth: 0
+      - name: Apply targeted Clippy fixes
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('apps/desktop/src-tauri/src/database_studio.rs')
+          text = path.read_text()
+
+          text = text.replace(
+              'use serde_json::{Map, Value};',
+              'use serde_json::Value;',
+              1,
+          )
+          text = text.replace(
+              'ok: messages.len() == 1 && messages[0].eq_ignore_ascii_case("ok"),',
+              'ok: matches!(messages.as_slice(), [message] if message.eq_ignore_ascii_case("ok")),',
+              1,
+          )
+          old = '''        if fetched < usize::try_from(MAX_PAGE_SIZE).unwrap_or(100)
+              || all_rows.len() >= usize::try_from(page.total_count.max(0)).unwrap_or(0)
+              || all_rows.len() >= MAX_EXPORT_ROWS
+          {
+              break;
+          }
+'''
+          new = '''        let expected_total = usize::try_from(page.total_count.max(0)).unwrap_or(usize::MAX);
+          if fetched < MAX_PAGE_SIZE as usize
+              || all_rows.len() >= expected_total
+              || all_rows.len() >= MAX_EXPORT_ROWS
+          {
+              break;
+          }
+'''
+          if old not in text:
+              raise SystemExit('expected export termination block not found')
+          text = text.replace(old, new, 1)
+          path.write_text(text)
+          PY
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+          components: rustfmt
+      - run: cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - name: Commit fixes and remove temporary workflow
+        run: |
+          rm .github/workflows/database-studio-clippy-fix.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add apps/desktop/src-tauri/src/database_studio.rs .github/workflows/database-studio-clippy-fix.yml
+          git commit -m "fix(rust): satisfy Database Studio Clippy checks"
+          git push origin HEAD:feat/database-studio-0.2
