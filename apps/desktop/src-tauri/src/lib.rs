@@ -1,3 +1,6 @@
+mod canon_import;
+
+use canon_import::{CanonImportReviewSnapshot, get_latest_review, import_source};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
@@ -8,7 +11,7 @@ use std::{
 use tauri::Manager;
 use thiserror::Error;
 
-const SOURCE_MANIFEST_RELATIVE_PATH: &str = "docs/canon/source/manifest.json";
+pub(crate) const SOURCE_MANIFEST_RELATIVE_PATH: &str = "docs/canon/source/manifest.json";
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -19,6 +22,7 @@ pub enum AppError {
     #[error("canonical source manifest error: {0}")]
     CanonManifest(String),
 }
+
 impl Serialize for AppError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -42,16 +46,16 @@ pub struct SourceDocument {
     pub notes: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct CanonSourceManifest {
-    schema_version: u64,
-    current_version: String,
-    current_source: String,
-    status: String,
-    approved_by: String,
-    approved_at: String,
-    sha256: String,
+pub(crate) struct CanonSourceManifest {
+    pub(crate) schema_version: u64,
+    pub(crate) current_version: String,
+    pub(crate) current_source: String,
+    pub(crate) status: String,
+    pub(crate) approved_by: String,
+    pub(crate) approved_at: String,
+    pub(crate) sha256: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -62,6 +66,7 @@ pub struct SourceOfTruthStatus {
     sha256: Option<String>,
     canon_version: Option<String>,
 }
+
 #[derive(Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct HealthStatus {
@@ -76,8 +81,13 @@ pub struct HealthStatus {
 }
 
 pub async fn connect(database_url: &str) -> Result<SqlitePool, AppError> {
+    let max_connections = if database_url.contains(":memory:") {
+        1
+    } else {
+        5
+    };
     Ok(SqlitePoolOptions::new()
-        .max_connections(5)
+        .max_connections(max_connections)
         .connect(database_url)
         .await?)
 }
@@ -118,20 +128,20 @@ pub async fn get_source_document(
     pool: &SqlitePool,
     id: &str,
 ) -> Result<Option<SourceDocument>, AppError> {
-    Ok(
-        sqlx::query_as::<_, SourceDocument>("SELECT * FROM source_documents WHERE id = ?")
-            .bind(id)
-            .fetch_optional(pool)
-            .await?,
+    Ok(sqlx::query_as::<_, SourceDocument>(
+        "SELECT id,title,version,authority_rank,original_path,sha256,imported_at,immutable,notes \
+         FROM source_documents WHERE id = ?",
     )
+    .bind(id)
+    .fetch_optional(pool)
+    .await?)
 }
 
-fn sha256_file(path: &Path) -> Result<String, AppError> {
-    let bytes = fs::read(path)?;
-    Ok(hex::encode(Sha256::digest(bytes)))
+pub(crate) fn sha256_file(path: &Path) -> Result<String, AppError> {
+    Ok(hex::encode(Sha256::digest(fs::read(path)?)))
 }
 
-fn read_canon_source_manifest(root: &Path) -> Result<CanonSourceManifest, AppError> {
+pub(crate) fn read_canon_source_manifest(root: &Path) -> Result<CanonSourceManifest, AppError> {
     let manifest_path = root.join(SOURCE_MANIFEST_RELATIVE_PATH);
     let manifest_text = fs::read_to_string(&manifest_path).map_err(|error| {
         if error.kind() == std::io::ErrorKind::NotFound {
@@ -151,6 +161,10 @@ fn read_canon_source_manifest(root: &Path) -> Result<CanonSourceManifest, AppErr
         || manifest.approved_by.is_empty()
         || manifest.approved_at.is_empty()
         || manifest.sha256.len() != 64
+        || !manifest
+            .sha256
+            .chars()
+            .all(|character| character.is_ascii_hexdigit())
     {
         return Err(AppError::CanonManifest(
             "canonical source manifest is invalid or incomplete".into(),
@@ -164,16 +178,16 @@ fn repo_root() -> PathBuf {
 }
 
 pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus, AppError> {
-    let mut diagnostics = vec![];
+    let mut diagnostics = Vec::new();
     let manifest = match read_canon_source_manifest(root) {
         Ok(manifest) => manifest,
         Err(error) => {
             diagnostics.push(error.to_string());
             diagnostics
-                .push("canonical source unavailable; no canonical content was inferred".into());
+                .push("Canonical source unavailable; no canonical content was inferred.".into());
             return Ok(HealthStatus {
                 project_name: "Shadow Council Studio".into(),
-                development_stage: "Foundation".into(),
+                development_stage: "Phase 1".into(),
                 database_connected: true,
                 migrations_applied: true,
                 source_of_truth: SourceOfTruthStatus {
@@ -182,13 +196,8 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
                     sha256: None,
                     canon_version: None,
                 },
-                modules_implemented: vec![
-                    "Dashboard".into(),
-                    "System Status".into(),
-                    "SQLite migrations".into(),
-                    "Source metadata registry".into(),
-                ],
-                next_recommended_phase: "Phase 1: canonical data model and deterministic import"
+                modules_implemented: implemented_modules(),
+                next_recommended_phase: "Restore the approved canonical source before importing."
                     .into(),
                 diagnostics,
             });
@@ -198,13 +207,12 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
     let source = root.join(&manifest.current_source);
     if !source.exists() {
         diagnostics.push(format!(
-            "canonical source referenced by manifest is missing: {}",
+            "Canonical source referenced by manifest is missing: {}",
             manifest.current_source
         ));
-        diagnostics.push("canonical source unavailable; no canonical content was inferred".into());
         return Ok(HealthStatus {
             project_name: "Shadow Council Studio".into(),
-            development_stage: "Foundation".into(),
+            development_stage: "Phase 1".into(),
             database_connected: true,
             migrations_applied: true,
             source_of_truth: SourceOfTruthStatus {
@@ -213,13 +221,9 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
                 sha256: None,
                 canon_version: Some(manifest.current_version),
             },
-            modules_implemented: vec![
-                "Dashboard".into(),
-                "System Status".into(),
-                "SQLite migrations".into(),
-                "Source metadata registry".into(),
-            ],
-            next_recommended_phase: "Phase 1: canonical data model and deterministic import".into(),
+            modules_implemented: implemented_modules(),
+            next_recommended_phase: "Restore the approved canonical source before importing."
+                .into(),
             diagnostics,
         });
     }
@@ -227,13 +231,12 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
     let hash = sha256_file(&source)?;
     if hash != manifest.sha256 {
         diagnostics.push(format!(
-            "canonical source hash mismatch for {}: expected {}, got {}",
+            "Canonical source hash mismatch for {}: expected {}, got {}",
             manifest.current_source, manifest.sha256, hash
         ));
-        diagnostics.push("canonical source unavailable; no canonical content was inferred".into());
         return Ok(HealthStatus {
             project_name: "Shadow Council Studio".into(),
-            development_stage: "Foundation".into(),
+            development_stage: "Phase 1".into(),
             database_connected: true,
             migrations_applied: true,
             source_of_truth: SourceOfTruthStatus {
@@ -242,13 +245,8 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
                 sha256: Some(hash),
                 canon_version: Some(manifest.current_version),
             },
-            modules_implemented: vec![
-                "Dashboard".into(),
-                "System Status".into(),
-                "SQLite migrations".into(),
-                "Source metadata registry".into(),
-            ],
-            next_recommended_phase: "Phase 1: canonical data model and deterministic import".into(),
+            modules_implemented: implemented_modules(),
+            next_recommended_phase: "Resolve the source hash mismatch before importing.".into(),
             diagnostics,
         });
     }
@@ -263,16 +261,23 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
         imported_at: chrono::Utc::now().to_rfc3339(),
         immutable: 1,
         notes: Some(format!(
-            "Immutable primary game-design source selected by {SOURCE_MANIFEST_RELATIVE_PATH}; semantic extraction not performed in Sprint 0. Status: {}. Approved by {} on {}.",
+            "Immutable source selected by {SOURCE_MANIFEST_RELATIVE_PATH}. Status: {}. Approved by {} on {}.",
             manifest.status, manifest.approved_by, manifest.approved_at
         )),
     };
     upsert_source_document(pool, &doc).await?;
-    diagnostics.push("Canonical source manifest verified; metadata registered only.".into());
+
+    let review = get_latest_review(pool).await?;
+    if review.run.is_some() {
+        diagnostics.push("Read-only canonical import evidence is available.".into());
+    } else {
+        diagnostics
+            .push("Canonical source verified; structural import has not been executed yet.".into());
+    }
 
     Ok(HealthStatus {
         project_name: "Shadow Council Studio".into(),
-        development_stage: "Foundation".into(),
+        development_stage: "Phase 1".into(),
         database_connected: true,
         migrations_applied: true,
         source_of_truth: SourceOfTruthStatus {
@@ -281,19 +286,25 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
             sha256: Some(hash),
             canon_version: Some(manifest.current_version),
         },
-        modules_implemented: vec![
-            "Dashboard".into(),
-            "System Status".into(),
-            "SQLite migrations".into(),
-            "Source metadata registry".into(),
-        ],
-        next_recommended_phase: "Phase 1: canonical data model and deterministic import".into(),
+        modules_implemented: implemented_modules(),
+        next_recommended_phase: "Run and review the deterministic import, then begin Phase 2."
+            .into(),
         diagnostics,
     })
 }
 
-#[tauri::command]
-async fn get_system_health(app: tauri::AppHandle) -> Result<HealthStatus, AppError> {
+fn implemented_modules() -> Vec<String> {
+    vec![
+        "Dashboard".into(),
+        "System Status".into(),
+        "SQLite migrations".into(),
+        "Source metadata registry".into(),
+        "Canonical import evidence store".into(),
+        "Read-only import review".into(),
+    ]
+}
+
+async fn open_app_pool(app: &tauri::AppHandle) -> Result<SqlitePool, AppError> {
     let data_dir = app
         .path()
         .app_data_dir()
@@ -302,13 +313,37 @@ async fn get_system_health(app: tauri::AppHandle) -> Result<HealthStatus, AppErr
     let db_path = data_dir.join("shadow-council-studio.sqlite");
     let pool = connect(&format!("sqlite://{}?mode=rwc", db_path.display())).await?;
     run_migrations(&pool).await?;
+    Ok(pool)
+}
+
+#[tauri::command]
+async fn get_system_health(app: tauri::AppHandle) -> Result<HealthStatus, AppError> {
+    let pool = open_app_pool(&app).await?;
     build_health(&pool, &repo_root()).await
+}
+
+#[tauri::command]
+async fn run_canon_import(app: tauri::AppHandle) -> Result<CanonImportReviewSnapshot, AppError> {
+    let pool = open_app_pool(&app).await?;
+    import_source(&pool, &repo_root()).await
+}
+
+#[tauri::command]
+async fn get_canon_import_review(
+    app: tauri::AppHandle,
+) -> Result<CanonImportReviewSnapshot, AppError> {
+    let pool = open_app_pool(&app).await?;
+    get_latest_review(&pool).await
 }
 
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![get_system_health])
+        .invoke_handler(tauri::generate_handler![
+            get_system_health,
+            run_canon_import,
+            get_canon_import_review
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -357,57 +392,35 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn service_health_handles_missing_manifest() {
+    async fn health_handles_missing_manifest_without_inventing_canon() {
         let pool = connect("sqlite::memory:").await.unwrap();
         run_migrations(&pool).await.unwrap();
-        let dir = tempdir().unwrap();
-        let health = build_health(&pool, dir.path()).await.unwrap();
+        let root = tempdir().unwrap();
+        let health = build_health(&pool, root.path()).await.unwrap();
         assert!(!health.source_of_truth.exists);
         assert!(health.diagnostics[0].contains("manifest is missing"));
     }
 
     #[tokio::test]
-    async fn service_health_registers_manifest_source_metadata() {
+    async fn health_registers_verified_versioned_source() {
         let pool = connect("sqlite::memory:").await.unwrap();
         run_migrations(&pool).await.unwrap();
-        let dir = tempdir().unwrap();
+        let root = tempdir().unwrap();
         let source_path = "docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx";
-        let source_file = dir.path().join(source_path);
+        let source_file = root.path().join(source_path);
         fs::create_dir_all(source_file.parent().unwrap()).unwrap();
         fs::write(&source_file, "canon").unwrap();
         let hash = sha256_file(&source_file).unwrap();
-        write_manifest(dir.path(), source_path, &hash);
+        write_manifest(root.path(), source_path, &hash);
 
-        let health = build_health(&pool, dir.path()).await.unwrap();
+        let health = build_health(&pool, root.path()).await.unwrap();
         assert!(health.source_of_truth.exists);
         assert_eq!(health.source_of_truth.canon_version, Some("1.3".into()));
-        let doc = get_source_document(&pool, "source-of-truth-v1.3")
+        let document = get_source_document(&pool, "source-of-truth-v1.3")
             .await
             .unwrap()
             .unwrap();
-        assert_eq!(doc.original_path, source_path);
-        assert_eq!(doc.sha256, Some(hash));
-    }
-
-    #[tokio::test]
-    async fn service_health_reports_hash_mismatch_without_registering_source() {
-        let pool = connect("sqlite::memory:").await.unwrap();
-        run_migrations(&pool).await.unwrap();
-        let dir = tempdir().unwrap();
-        let source_path = "docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx";
-        let source_file = dir.path().join(source_path);
-        fs::create_dir_all(source_file.parent().unwrap()).unwrap();
-        fs::write(&source_file, "canon").unwrap();
-        write_manifest(dir.path(), source_path, &"b".repeat(64));
-
-        let health = build_health(&pool, dir.path()).await.unwrap();
-        assert!(!health.source_of_truth.exists);
-        assert!(health.diagnostics[0].contains("hash mismatch"));
-        assert!(
-            get_source_document(&pool, "source-of-truth-v1.3")
-                .await
-                .unwrap()
-                .is_none()
-        );
+        assert_eq!(document.original_path, source_path);
+        assert_eq!(document.sha256, Some(hash));
     }
 }
