@@ -10,5 +10,4 @@
 
 Lower levels must never silently override higher levels. Conflicts require an RFC or decision record and human approval.
 
-
 Published source versions are immutable and live in versioned directories. The manifest, not the highest numbered directory, selects the approved current version. Only Niccolò can approve a new current version.

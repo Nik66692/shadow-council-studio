@@ -1,1 +1,17 @@
-{"name":"@shadow-council/domain","version":"0.0.0-sprint.0","private":true,"type":"module","main":"src/index.ts","scripts":{"build":"tsc -p tsconfig.json --noEmit","lint":"eslint src --ext .ts","typecheck":"tsc -p tsconfig.json --noEmit","test":"vitest run"},"dependencies":{"zod":"3.25.76"},"devDependencies":{}}
+{
+  "name": "@shadow-council/domain",
+  "version": "0.0.0-sprint.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint src --ext .ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "zod": "3.25.76"
+  },
+  "devDependencies": {}
+}

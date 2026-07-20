@@ -1,3 +1,8 @@
-import react from '@vitejs/plugin-react';
-import { defineConfig } from 'vite';
-export default defineConfig({ plugins:[react()], server:{ port:1420, strictPort:true }, clearScreen:false, test:{ environment:'jsdom', setupFiles:'./src/test/setup.ts' } });
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+export default defineConfig({
+  plugins: [react()],
+  server: { port: 1420, strictPort: true },
+  clearScreen: false,
+  test: { environment: "jsdom", setupFiles: "./src/test/setup.ts" },
+});
