@@ -1,20 +1,20 @@
 # Roadmap
 
-## Sprint 0: repository foundation
+## Sprint 0: repository foundation — COMPLETE
 
-Goal: testable foundation. Scope: tooling, docs, domain contracts, SQLite metadata, diagnostics, CI. Exclusions: semantic import and CRUD. Dependencies: none. Acceptance: quality gates pass.
+Goal: testable foundation. Scope: tooling, docs, domain contracts, SQLite metadata, diagnostics and CI. Acceptance completed through merged PR #1 with all quality gates passing.
 
-## Phase 1: canonical data model and deterministic import
+## Phase 1: canonical data model and deterministic import — ACTIVE
 
-Goal: reviewed import pipeline. Scope: extract structure and CanonEntry drafts. Exclusions: auto-promotion. Dependencies: Sprint 0. Acceptance: human-reviewable import reports.
+Goal: human-reviewable import pipeline. Scope: manifest-selected DOCX extraction, deterministic source anchors, raw evidence, normalized review drafts, visible warnings, SQLite persistence and read-only review UI. Exclusions: automatic interpretation, canonical promotion and editing. Dependencies: Sprint 0. Acceptance: repeatable imports and traceable review evidence.
 
 ## Phase 2: read-only living Codex
 
-Goal: browse approved canon. Scope: read-only UI. Exclusions: editing. Dependencies: Phase 1. Acceptance: source-linked entries.
+Goal: browse human-approved canon. Scope: source-linked read-only UI. Exclusions: editing. Dependencies: Phase 1 plus an explicit human-approval model. Acceptance: every displayed canonical entry links to approved source evidence.
 
 ## Phase 3: card database and card versioning
 
-Goal: track cards and versions. Scope: card/version records. Exclusions: renderer. Dependencies: Phase 1. Acceptance: append-only history.
+Goal: track cards and versions. Scope: card/version records and portable JSON import. Exclusions: renderer. Dependencies: Phase 1. Acceptance: append-only history.
 
 ## Phase 4: RFC, decisions, risks and playtests
 
