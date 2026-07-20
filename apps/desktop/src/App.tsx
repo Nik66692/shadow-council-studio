@@ -5,6 +5,7 @@ import type {
 import { sprint0Sections } from "@shadow-council/ui";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
+import { DatabaseStudio } from "./DatabaseStudio";
 
 const fallback: HealthStatus = {
   projectName: "Shadow Council Studio",
@@ -17,7 +18,7 @@ const fallback: HealthStatus = {
     sha256: null,
     canonVersion: null,
   },
-  modulesImplemented: ["Dashboard", "Import canonico"],
+  modulesImplemented: ["Dashboard", "Import canonico", "Database Studio"],
   nextRecommendedPhase:
     "Esegui l'app desktop Tauri per accedere al database SQLite locale.",
   diagnostics: [
@@ -97,7 +98,7 @@ export function App() {
     <main className="app">
       <aside>
         <h1>Shadow Council Studio</h1>
-        <p className="phase-badge">Phase 1 · Canon Import</p>
+        <p className="phase-badge">Phase 1 · Database Studio 0.2</p>
         <nav aria-label="Sezioni">
           <ul>
             {sprint0Sections.map((section) => (
@@ -130,9 +131,11 @@ export function App() {
             onImport={runImport}
           />
         )}
-        {health && active !== "Dashboard" && active !== "Import canonico" && (
-          <NotImplemented title={active} />
-        )}
+        {health && active === "Database Studio" && <DatabaseStudio />}
+        {health &&
+          active !== "Dashboard" &&
+          active !== "Import canonico" &&
+          active !== "Database Studio" && <NotImplemented title={active} />}
       </section>
     </main>
   );

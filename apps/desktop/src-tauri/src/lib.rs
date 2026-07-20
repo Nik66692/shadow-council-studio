@@ -1,6 +1,14 @@
 mod canon_import;
+mod database_studio;
 
 use canon_import::{CanonImportReviewSnapshot, get_latest_review, import_source};
+use database_studio::{
+    CanonReviewNoteUpdate, DatabaseAuditEntry, DatabaseFileResult, DatabaseIntegrityReport,
+    DatabaseStudioSnapshot, DatabaseTablePage, ProjectMetadataUpdate, TableBrowseRequest,
+    browse_table, create_backup, database_path, export_table, get_database_snapshot,
+    run_integrity_check, update_project_metadata as update_metadata,
+    upsert_review_note as save_review_note,
+};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
@@ -21,6 +29,8 @@ pub enum AppError {
     Io(#[from] std::io::Error),
     #[error("canonical source manifest error: {0}")]
     CanonManifest(String),
+    #[error("database studio error: {0}")]
+    DatabaseStudio(String),
 }
 
 impl Serialize for AppError {
@@ -287,8 +297,9 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
             canon_version: Some(manifest.current_version),
         },
         modules_implemented: implemented_modules(),
-        next_recommended_phase: "Run and review the deterministic import, then begin Phase 2."
-            .into(),
+        next_recommended_phase:
+            "Inspect the relational model in Database Studio, then begin controlled canon review."
+                .into(),
         diagnostics,
     })
 }
@@ -301,16 +312,22 @@ fn implemented_modules() -> Vec<String> {
         "Source metadata registry".into(),
         "Canonical import evidence store".into(),
         "Read-only import review".into(),
+        "Database Studio".into(),
     ]
 }
 
-async fn open_app_pool(app: &tauri::AppHandle) -> Result<SqlitePool, AppError> {
+fn app_data_dir(app: &tauri::AppHandle) -> Result<PathBuf, AppError> {
     let data_dir = app
         .path()
         .app_data_dir()
         .unwrap_or_else(|_| std::env::temp_dir().join("shadow-council-studio"));
     fs::create_dir_all(&data_dir)?;
-    let db_path = data_dir.join("shadow-council-studio.sqlite");
+    Ok(data_dir)
+}
+
+async fn open_app_pool(app: &tauri::AppHandle) -> Result<SqlitePool, AppError> {
+    let data_dir = app_data_dir(app)?;
+    let db_path = database_path(&data_dir);
     let pool = connect(&format!("sqlite://{}?mode=rwc", db_path.display())).await?;
     run_migrations(&pool).await?;
     Ok(pool)
@@ -336,13 +353,84 @@ async fn get_canon_import_review(
     get_latest_review(&pool).await
 }
 
+#[tauri::command]
+async fn get_database_studio_snapshot(
+    app: tauri::AppHandle,
+) -> Result<DatabaseStudioSnapshot, AppError> {
+    let data_dir = app_data_dir(&app)?;
+    let path = database_path(&data_dir);
+    let pool = open_app_pool(&app).await?;
+    get_database_snapshot(&pool, &path).await
+}
+
+#[tauri::command]
+async fn browse_database_table(
+    app: tauri::AppHandle,
+    request: TableBrowseRequest,
+) -> Result<DatabaseTablePage, AppError> {
+    let pool = open_app_pool(&app).await?;
+    browse_table(&pool, request).await
+}
+
+#[tauri::command]
+async fn export_database_table(
+    app: tauri::AppHandle,
+    request: TableBrowseRequest,
+    format: String,
+) -> Result<DatabaseFileResult, AppError> {
+    let data_dir = app_data_dir(&app)?;
+    let pool = open_app_pool(&app).await?;
+    export_table(&pool, &data_dir.join("exports"), request, &format).await
+}
+
+#[tauri::command]
+async fn create_database_backup(app: tauri::AppHandle) -> Result<DatabaseFileResult, AppError> {
+    let data_dir = app_data_dir(&app)?;
+    let path = database_path(&data_dir);
+    let pool = open_app_pool(&app).await?;
+    create_backup(&pool, &path, &data_dir.join("backups")).await
+}
+
+#[tauri::command]
+async fn run_database_integrity_check(
+    app: tauri::AppHandle,
+) -> Result<DatabaseIntegrityReport, AppError> {
+    let pool = open_app_pool(&app).await?;
+    run_integrity_check(&pool).await
+}
+
+#[tauri::command]
+async fn update_database_project_metadata(
+    app: tauri::AppHandle,
+    update: ProjectMetadataUpdate,
+) -> Result<DatabaseAuditEntry, AppError> {
+    let pool = open_app_pool(&app).await?;
+    update_metadata(&pool, update).await
+}
+
+#[tauri::command]
+async fn upsert_database_review_note(
+    app: tauri::AppHandle,
+    update: CanonReviewNoteUpdate,
+) -> Result<DatabaseAuditEntry, AppError> {
+    let pool = open_app_pool(&app).await?;
+    save_review_note(&pool, update).await
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             get_system_health,
             run_canon_import,
-            get_canon_import_review
+            get_canon_import_review,
+            get_database_studio_snapshot,
+            browse_database_table,
+            export_database_table,
+            create_database_backup,
+            run_database_integrity_check,
+            update_database_project_metadata,
+            upsert_database_review_note
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
