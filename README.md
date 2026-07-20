@@ -55,7 +55,7 @@ pnpm build
 
 ## Source hierarchy
 
-See `docs/project/SOURCE_HIERARCHY.md`. `docs/canon/source/Shadow_Council_Source_of_Truth_v1.3.docx` is immutable primary source material when present. Sprint 0 records metadata and hashes only.
+See `docs/project/SOURCE_HIERARCHY.md`. `docs/canon/source/manifest.json` selects the approved current source. The current v1.3 file is `docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx`; Sprint 0 records metadata and hashes only.
 
 ## Contribution workflow
 

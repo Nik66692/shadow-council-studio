@@ -1,6 +1,8 @@
 # Canon import scaffold
 
-Sprint 0 locates `docs/canon/source/Shadow_Council_Source_of_Truth_v1.3.docx`, computes metadata and SHA-256, and writes a deterministic manifest. It never extracts semantic rules, overwrites curated normalized content, or infers canonical status from formatting.
+Sprint 0 reads `docs/canon/source/manifest.json`, resolves its `currentSource`, verifies the referenced DOCX exists, computes SHA-256, compares it with the manifest hash, and writes a deterministic registry manifest when not in dry-run mode.
+
+It never extracts semantic rules, overwrites curated normalized content, or infers canonical status from formatting.
 
 ## Commands
 

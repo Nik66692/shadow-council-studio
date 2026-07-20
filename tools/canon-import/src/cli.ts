@@ -1,7 +1,23 @@
-import { createManifest, writeManifest } from './manifest';
+import { CanonManifestError, createManifest, writeManifest } from './manifest';
+
 const [, , command, ...args] = process.argv;
-if (command !== 'manifest') throw new Error('Usage: canon-import manifest [--dry-run]');
-const root = process.cwd();
-const manifest = createManifest(root, new Date(0).toISOString());
-if (args.includes('--dry-run')) console.log(JSON.stringify(manifest, null, 2));
-else console.log(`Wrote ${writeManifest(root, manifest)}`);
+
+try {
+  if (command !== 'manifest') {
+    throw new CanonManifestError('Usage: canon-import manifest [--dry-run]');
+  }
+
+  const manifest = createManifest(process.cwd(), new Date(0).toISOString());
+  if (args.includes('--dry-run')) {
+    console.log(JSON.stringify(manifest, null, 2));
+  } else {
+    console.log(`Wrote ${writeManifest(process.cwd(), manifest)}`);
+  }
+} catch (error) {
+  if (error instanceof CanonManifestError) {
+    console.error(error.message);
+    process.exitCode = 1;
+  } else {
+    throw error;
+  }
+}
