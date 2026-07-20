@@ -1,7 +1,3 @@
-# Canonical sources
+# Canonical source files
 
-This directory contains the original, versioned canonical source documents for Shadow Council.
-
-Published versions are immutable: a newer version must be added in a new directory and must never overwrite an older version.
-
-The current authoritative version is declared by `manifest.json`.
+Place `Shadow_Council_Source_of_Truth_v1.3.docx` here when available. Treat it as immutable primary source material; do not edit it through the application.

@@ -1,0 +1,8 @@
+import { createHash } from 'node:crypto';
+import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import path from 'node:path';
+export const canonicalSourceRelativePath = 'docs/canon/source/Shadow_Council_Source_of_Truth_v1.3.docx';
+export interface ImportManifest { schemaVersion: 1; sourcePath: string; exists: boolean; sha256: string | null; sizeBytes: number | null; generatedAt: string; warnings: string[]; semanticExtraction: 'not-implemented-in-sprint-0'; }
+export function sha256File(filePath: string): string { return createHash('sha256').update(readFileSync(filePath)).digest('hex'); }
+export function createManifest(rootDir: string, generatedAt = '1970-01-01T00:00:00.000Z'): ImportManifest { const sourcePath = path.join(rootDir, canonicalSourceRelativePath); if (!existsSync(sourcePath)) return { schemaVersion:1, sourcePath:canonicalSourceRelativePath, exists:false, sha256:null, sizeBytes:null, generatedAt, warnings:['canonical source missing; no canonical content was inferred'], semanticExtraction:'not-implemented-in-sprint-0' }; const stat = statSync(sourcePath); return { schemaVersion:1, sourcePath:canonicalSourceRelativePath, exists:true, sha256:sha256File(sourcePath), sizeBytes:stat.size, generatedAt, warnings:['semantic DOCX extraction is intentionally not implemented in Sprint 0'], semanticExtraction:'not-implemented-in-sprint-0' }; }
+export function writeManifest(rootDir: string, manifest: ImportManifest): string { const out = path.join(rootDir, 'docs/canon/registry/source-manifest.json'); writeFileSync(out, `${JSON.stringify(manifest, null, 2)}\n`); return out; }
