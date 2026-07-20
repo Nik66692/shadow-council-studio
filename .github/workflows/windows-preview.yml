@@ -1,0 +1,58 @@
+name: Windows Preview
+
+on:
+  pull_request:
+    paths:
+      - "apps/desktop/**"
+      - "docs/canon/source/**"
+      - ".github/workflows/windows-preview.yml"
+  push:
+    branches: [main]
+    paths:
+      - "apps/desktop/**"
+      - "docs/canon/source/**"
+      - ".github/workflows/windows-preview.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-windows-preview:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/desktop/src-tauri
+      - name: Install JavaScript dependencies
+        run: pnpm install --frozen-lockfile
+      - name: Build NSIS installer
+        working-directory: apps/desktop
+        run: pnpm dlx @tauri-apps/cli@2.7.0 build --bundles nsis
+      - name: Create SHA-256 checksum
+        shell: pwsh
+        run: |
+          $installer = Get-ChildItem "apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe" | Select-Object -First 1
+          if (-not $installer) { throw "NSIS installer was not produced" }
+          $hash = Get-FileHash $installer.FullName -Algorithm SHA256
+          "$($hash.Hash.ToLower()) *$($installer.Name)" | Set-Content "apps/desktop/src-tauri/target/release/bundle/nsis/SHA256SUMS.txt"
+      - name: Upload Windows preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: shadow-council-studio-windows-preview-0.2.0
+          path: |
+            apps/desktop/src-tauri/target/release/bundle/nsis/*-setup.exe
+            apps/desktop/src-tauri/target/release/bundle/nsis/SHA256SUMS.txt
+          if-no-files-found: error
+          retention-days: 30

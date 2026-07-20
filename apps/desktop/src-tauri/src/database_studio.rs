@@ -536,13 +536,15 @@ pub async fn export_table(
         if columns.is_empty() {
             columns = page.columns;
         }
+        let expected_total = usize::try_from(page.total_count.max(0)).unwrap_or(usize::MAX);
+        if expected_total > MAX_EXPORT_ROWS {
+            return Err(AppError::DatabaseStudio(format!(
+                "export contains {expected_total} matching rows, exceeding the safe limit of {MAX_EXPORT_ROWS}; refine the filters before exporting"
+            )));
+        }
         let fetched = page.rows.len();
         all_rows.extend(page.rows);
-        let expected_total = usize::try_from(page.total_count.max(0)).unwrap_or(usize::MAX);
-        if fetched < MAX_PAGE_SIZE as usize
-            || all_rows.len() >= expected_total
-            || all_rows.len() >= MAX_EXPORT_ROWS
-        {
+        if fetched < MAX_PAGE_SIZE as usize || all_rows.len() >= expected_total {
             break;
         }
         request.page += 1;
