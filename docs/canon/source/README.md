@@ -1,7 +1,7 @@
-# Canonical sources
+# Canonical source files
 
-This directory contains the original, versioned canonical source documents for Shadow Council.
+Published canonical source versions are immutable. Add newer approved source files in new versioned directories such as `docs/canon/source/v1.4/`; do not edit, rename, overwrite or delete an already published DOCX.
 
-Published versions are immutable: a newer version must be added in a new directory and must never overwrite an older version.
+`docs/canon/source/manifest.json` selects the approved current version. The highest numbered directory is not automatically authoritative. Only Niccolò can approve a new current version by updating the manifest metadata and SHA-256.
 
-The current authoritative version is declared by `manifest.json`.
+Current manifest-selected source: `docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx`.
