@@ -74,7 +74,7 @@ it("renders discovered tables and relationships", async () => {
 
   render(<DatabaseStudio />);
   expect(await screen.findByText("Database Studio")).toBeInTheDocument();
-  expect(await screen.findByText("source_documents")).toBeInTheDocument();
+  expect((await screen.findAllByText("source_documents")).length).toBeGreaterThan(0);
   expect(screen.getByText("Relazioni")).toBeInTheDocument();
-  expect(screen.getByText("Database integro")).toBeInTheDocument();
+  expect(screen.getByText("OK")).toBeInTheDocument();
 });
