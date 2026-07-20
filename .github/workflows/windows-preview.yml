@@ -37,11 +37,9 @@ jobs:
           workspaces: apps/desktop/src-tauri
       - name: Install JavaScript dependencies
         run: pnpm install --frozen-lockfile
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version 2.7.0 --locked
       - name: Build NSIS installer
-        working-directory: apps/desktop/src-tauri
-        run: cargo tauri build --bundles nsis
+        working-directory: apps/desktop
+        run: pnpm dlx @tauri-apps/cli@2.7.0 build --bundles nsis
       - name: Create SHA-256 checksum
         shell: pwsh
         run: |
@@ -49,8 +47,6 @@ jobs:
           if (-not $installer) { throw "NSIS installer was not produced" }
           $hash = Get-FileHash $installer.FullName -Algorithm SHA256
           "$($hash.Hash.ToLower()) *$($installer.Name)" | Set-Content "apps/desktop/src-tauri/target/release/bundle/nsis/SHA256SUMS.txt"
-          "installer_path=$($installer.FullName)" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-        id: checksum
       - name: Upload Windows preview
         uses: actions/upload-artifact@v4
         with:
