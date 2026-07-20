@@ -63,7 +63,7 @@ export type ProjectMetadata = z.infer<typeof ProjectMetadataSchema>;
 
 export const HealthStatusSchema = z.object({
   projectName: z.literal("Shadow Council Studio"),
-  developmentStage: z.enum(["Foundation", "Phase 1"]),
+  developmentStage: z.enum(["Foundation", "Phase 1", "Phase 1.5"]),
   databaseConnected: z.boolean(),
   migrationsApplied: z.boolean(),
   sourceOfTruth: z.object({
@@ -114,7 +114,7 @@ export const CanonReviewDraftSchema = z.object({
   styleName: z.string().nullable(),
   originalText: z.string(),
   textSha256: z.string().regex(/^[a-f0-9]{64}$/),
-  reviewStatus: z.literal("PENDING_HUMAN_REVIEW"),
+  reviewStatus: z.string().min(1),
   canonicalStatus: CanonicalStatusSchema.nullable(),
 });
 export type CanonReviewDraft = z.infer<typeof CanonReviewDraftSchema>;
@@ -138,4 +138,5 @@ export type CanonImportReviewSnapshot = z.infer<
   typeof CanonImportReviewSnapshotSchema
 >;
 
+export * from "./canonReview";
 export * from "./databaseStudio";
