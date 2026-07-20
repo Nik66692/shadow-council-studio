@@ -48,7 +48,9 @@ export function formatDatabaseValue(value: unknown): string {
 
 export function DatabaseStudio() {
   const [snapshot, setSnapshot] = useState<DatabaseStudioSnapshot | null>(null);
-  const [selectedTableName, setSelectedTableName] = useState<string | null>(null);
+  const [selectedTableName, setSelectedTableName] = useState<string | null>(
+    null,
+  );
   const [tab, setTab] = useState<StudioTab>("schema");
   const [page, setPage] = useState<DatabaseTablePage | null>(null);
   const [selectedRow, setSelectedRow] = useState<DatabaseRow | null>(null);
@@ -77,7 +79,9 @@ export function DatabaseStudio() {
         "get_database_studio_snapshot",
       );
       setSnapshot(result);
-      setSelectedTableName((current) => current ?? result.tables[0]?.name ?? null);
+      setSelectedTableName(
+        (current) => current ?? result.tables[0]?.name ?? null,
+      );
     } catch (cause: unknown) {
       setError(errorMessage(cause));
     } finally {
@@ -96,7 +100,14 @@ export function DatabaseStudio() {
       filterColumn: activeFilter?.column ?? null,
       filterValue: activeFilter?.value ?? null,
     };
-  }, [activeFilter, pageIndex, search, selectedTableName, sortColumn, sortDirection]);
+  }, [
+    activeFilter,
+    pageIndex,
+    search,
+    selectedTableName,
+    sortColumn,
+    sortDirection,
+  ]);
 
   const loadTable = useCallback(async () => {
     const request = buildRequest();
@@ -277,7 +288,9 @@ export function DatabaseStudio() {
                 {snapshot.tables.map((table) => (
                   <li key={table.name}>
                     <button
-                      className={table.name === selectedTableName ? "active" : ""}
+                      className={
+                        table.name === selectedTableName ? "active" : ""
+                      }
                       onClick={() => selectTable(table.name)}
                     >
                       <span>{table.name}</span>
@@ -352,7 +365,9 @@ export function DatabaseStudio() {
                     setPageIndex(0);
                   }}
                   onSelectRow={setSelectedRow}
-                  onPrevious={() => setPageIndex((current) => Math.max(0, current - 1))}
+                  onPrevious={() =>
+                    setPageIndex((current) => Math.max(0, current - 1))
+                  }
                   onNext={() => setPageIndex((current) => current + 1)}
                   onClearFilter={() => {
                     setActiveFilter(null);
@@ -456,8 +471,8 @@ function SchemaView({
           <ul className="index-list">
             {table.indexes.map((index) => (
               <li key={index.name}>
-                <code>{index.name}</code> · {index.unique ? "UNIQUE" : "INDEX"} ·{" "}
-                {index.columns.join(", ")}
+                <code>{index.name}</code> · {index.unique ? "UNIQUE" : "INDEX"}{" "}
+                · {index.columns.join(", ")}
               </li>
             ))}
           </ul>
@@ -718,7 +733,8 @@ function RecordInspector({
               disabled={row[relationship.sourceColumn] == null}
               onClick={() => onNavigate(relationship, "outgoing")}
             >
-              Apri {relationship.targetTable} tramite {relationship.sourceColumn}
+              Apri {relationship.targetTable} tramite{" "}
+              {relationship.sourceColumn}
             </button>
           ))}
           {incoming.map((relationship) => (
@@ -767,7 +783,11 @@ function MetadataEditor({
   const save = async () => {
     setSaving(true);
     try {
-      const update: ProjectMetadataUpdate = { key, value, reason } as ProjectMetadataUpdate;
+      const update: ProjectMetadataUpdate = {
+        key,
+        value,
+        reason,
+      } as ProjectMetadataUpdate;
       const entry = await invoke<DatabaseAuditEntry>(
         "update_database_project_metadata",
         { update },
@@ -783,13 +803,19 @@ function MetadataEditor({
     <div className="safe-editor">
       <p className="eyebrow">MODIFICA CONTROLLATA</p>
       <h4>Valore metadato</h4>
-      <textarea value={value} onChange={(event) => setValue(event.target.value)} />
+      <textarea
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+      />
       <input
         value={reason}
         onChange={(event) => setReason(event.target.value)}
         placeholder="Motivazione obbligatoria"
       />
-      <button disabled={saving || reason.trim().length < 3} onClick={() => void save()}>
+      <button
+        disabled={saving || reason.trim().length < 3}
+        onClick={() => void save()}
+      >
         {saving ? "Salvataggio…" : "Salva e registra audit"}
       </button>
     </div>
@@ -840,7 +866,10 @@ function ReviewNoteEditor({
         onChange={(event) => setReason(event.target.value)}
         placeholder="Motivazione obbligatoria"
       />
-      <button disabled={saving || reason.trim().length < 3} onClick={() => void save()}>
+      <button
+        disabled={saving || reason.trim().length < 3}
+        onClick={() => void save()}
+      >
         {saving ? "Salvataggio…" : "Salva nota e audit"}
       </button>
     </div>
@@ -860,14 +889,18 @@ function MaintenanceView({
     <section className="maintenance-view">
       <div className="maintenance-card">
         <p className="eyebrow">INTEGRITÀ SQLITE</p>
-        <h3>{snapshot.integrity.ok ? "Database integro" : "Verifica richiesta"}</h3>
+        <h3>
+          {snapshot.integrity.ok ? "Database integro" : "Verifica richiesta"}
+        </h3>
         <p>Ultimo controllo: {snapshot.integrity.checkedAt}</p>
         <ul>
           {snapshot.integrity.messages.map((message) => (
             <li key={message}>{message}</li>
           ))}
         </ul>
-        <button onClick={() => void onIntegrity()}>Esegui integrity_check</button>
+        <button onClick={() => void onIntegrity()}>
+          Esegui integrity_check
+        </button>
       </div>
       <div className="maintenance-card">
         <p className="eyebrow">BACKUP LOCALE</p>

@@ -28,9 +28,7 @@ export const DatabaseRelationshipSchema = z.object({
   onDelete: z.string(),
   cardinality: z.enum(["1:1", "N:1"]),
 });
-export type DatabaseRelationship = z.infer<
-  typeof DatabaseRelationshipSchema
->;
+export type DatabaseRelationship = z.infer<typeof DatabaseRelationshipSchema>;
 
 export const DatabaseTableSchema = z.object({
   name: z.string().min(1),
@@ -117,15 +115,11 @@ export const ProjectMetadataUpdateSchema = z.object({
   value: z.string(),
   reason: z.string().min(3),
 });
-export type ProjectMetadataUpdate = z.infer<
-  typeof ProjectMetadataUpdateSchema
->;
+export type ProjectMetadataUpdate = z.infer<typeof ProjectMetadataUpdateSchema>;
 
 export const CanonReviewNoteUpdateSchema = z.object({
   draftId: z.string().min(1),
   note: z.string(),
   reason: z.string().min(3),
 });
-export type CanonReviewNoteUpdate = z.infer<
-  typeof CanonReviewNoteUpdateSchema
->;
+export type CanonReviewNoteUpdate = z.infer<typeof CanonReviewNoteUpdateSchema>;
