@@ -1,7 +1,14 @@
 mod canon_import;
+mod canon_review;
 mod database_studio;
 
 use canon_import::{CanonImportReviewSnapshot, get_latest_review, import_source};
+use canon_review::{
+    ApproveCanonDraftsRequest, CanonReviewWorkspace, RejectCanonDraftsRequest,
+    approve_canon_drafts as approve_drafts,
+    get_canon_review_workspace as load_canon_review_workspace,
+    reject_canon_drafts as reject_drafts,
+};
 use database_studio::{
     CanonReviewNoteUpdate, DatabaseAuditEntry, DatabaseFileResult, DatabaseIntegrityReport,
     DatabaseStudioSnapshot, DatabaseTablePage, ProjectMetadataUpdate, TableBrowseRequest,
@@ -29,6 +36,8 @@ pub enum AppError {
     Io(#[from] std::io::Error),
     #[error("canonical source manifest error: {0}")]
     CanonManifest(String),
+    #[error("canon review error: {0}")]
+    CanonReview(String),
     #[error("database studio error: {0}")]
     DatabaseStudio(String),
 }
@@ -220,7 +229,7 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
                 .push("Canonical source unavailable; no canonical content was inferred.".into());
             return Ok(HealthStatus {
                 project_name: "Shadow Council Studio".into(),
-                development_stage: "Phase 1".into(),
+                development_stage: "Phase 1.5".into(),
                 database_connected: true,
                 migrations_applied: true,
                 source_of_truth: SourceOfTruthStatus {
@@ -245,7 +254,7 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
         ));
         return Ok(HealthStatus {
             project_name: "Shadow Council Studio".into(),
-            development_stage: "Phase 1".into(),
+            development_stage: "Phase 1.5".into(),
             database_connected: true,
             migrations_applied: true,
             source_of_truth: SourceOfTruthStatus {
@@ -269,7 +278,7 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
         ));
         return Ok(HealthStatus {
             project_name: "Shadow Council Studio".into(),
-            development_stage: "Phase 1".into(),
+            development_stage: "Phase 1.5".into(),
             database_connected: true,
             migrations_applied: true,
             source_of_truth: SourceOfTruthStatus {
@@ -302,15 +311,24 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
 
     let review = get_latest_review(pool).await?;
     if review.run.is_some() {
-        diagnostics.push("Read-only canonical import evidence is available.".into());
+        diagnostics.push("Canonical import evidence is available for human review.".into());
     } else {
         diagnostics
             .push("Canonical source verified; structural import has not been executed yet.".into());
     }
 
+    let canon_workspace = load_canon_review_workspace(pool).await?;
+    diagnostics.push(format!(
+        "Canon Review: {} pending drafts, {} approved sources, {} rejected drafts, {} canon entries.",
+        canon_workspace.summary.pending_count,
+        canon_workspace.summary.approved_count,
+        canon_workspace.summary.rejected_count,
+        canon_workspace.summary.entry_count
+    ));
+
     Ok(HealthStatus {
         project_name: "Shadow Council Studio".into(),
-        development_stage: "Phase 1".into(),
+        development_stage: "Phase 1.5".into(),
         database_connected: true,
         migrations_applied: true,
         source_of_truth: SourceOfTruthStatus {
@@ -321,7 +339,7 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
         },
         modules_implemented: implemented_modules(),
         next_recommended_phase:
-            "Inspect the relational model in Database Studio, then begin controlled canon review."
+            "Review imported drafts and build the approved canon registry before publishing the Living Codex."
                 .into(),
         diagnostics,
     })
@@ -334,7 +352,9 @@ fn implemented_modules() -> Vec<String> {
         "SQLite migrations".into(),
         "Source metadata registry".into(),
         "Canonical import evidence store".into(),
-        "Read-only import review".into(),
+        "Canon Review queue".into(),
+        "Approved canon registry".into(),
+        "Immutable review decisions".into(),
         "Database Studio".into(),
     ]
 }
@@ -376,6 +396,32 @@ async fn get_canon_import_review(
 ) -> Result<CanonImportReviewSnapshot, AppError> {
     let pool = open_app_pool(&app).await?;
     get_latest_review(&pool).await
+}
+
+#[tauri::command]
+async fn get_canon_review_workspace(
+    app: tauri::AppHandle,
+) -> Result<CanonReviewWorkspace, AppError> {
+    let pool = open_app_pool(&app).await?;
+    load_canon_review_workspace(&pool).await
+}
+
+#[tauri::command]
+async fn approve_canon_drafts(
+    app: tauri::AppHandle,
+    request: ApproveCanonDraftsRequest,
+) -> Result<CanonReviewWorkspace, AppError> {
+    let pool = open_app_pool(&app).await?;
+    approve_drafts(&pool, request).await
+}
+
+#[tauri::command]
+async fn reject_canon_drafts(
+    app: tauri::AppHandle,
+    request: RejectCanonDraftsRequest,
+) -> Result<CanonReviewWorkspace, AppError> {
+    let pool = open_app_pool(&app).await?;
+    reject_drafts(&pool, request).await
 }
 
 #[tauri::command]
@@ -449,6 +495,9 @@ pub fn run() {
             get_system_health,
             run_canon_import,
             get_canon_import_review,
+            get_canon_review_workspace,
+            approve_canon_drafts,
+            reject_canon_drafts,
             get_database_studio_snapshot,
             browse_database_table,
             export_database_table,
@@ -543,7 +592,8 @@ mod tests {
         let pool = connect("sqlite::memory:").await.unwrap();
         run_migrations(&pool).await.unwrap();
         let root = tempdir().unwrap();
-        let source_path = "docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx";
+        let source_path =
+            "docs/canon/source/v1.3/Shadow_Council_Source_of_Truth_v1.3.docx";
         let source_file = root.path().join(source_path);
         fs::create_dir_all(source_file.parent().unwrap()).unwrap();
         fs::write(&source_file, "canon").unwrap();
