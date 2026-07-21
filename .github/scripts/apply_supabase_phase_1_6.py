@@ -114,13 +114,3 @@ root_package_path.write_text(json.dumps(root_package, indent=2) + "\n")
 
 replace_all("apps/desktop/src-tauri/Cargo.toml", 'version = "0.3.2"', 'version = "0.4.0"')
 replace_all("apps/desktop/src-tauri/tauri.conf.json", '"version": "0.3.2"', '"version": "0.4.0"')
-replace_all(
-    ".github/workflows/windows-preview.yml",
-    "shadow-council-studio-windows-preview-0.3.2",
-    "shadow-council-studio-windows-preview-0.4.0",
-)
-replace_once(
-    ".github/workflows/ci.yml",
-    "      - name: Validate canonical source manifest\n        run: pnpm canon:manifest:dry-run\n",
-    "      - name: Validate canonical source manifest\n        run: pnpm canon:manifest:dry-run\n      - name: Validate Supabase schema safeguards\n        run: pnpm supabase:schema:check\n",
-)
