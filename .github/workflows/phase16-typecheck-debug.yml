@@ -1,0 +1,31 @@
+name: Phase 1.6 Typecheck Debug
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/phase16-typecheck-debug.yml"
+  push:
+    branches: [feat/supabase-cloud-foundation-1.6]
+    paths:
+      - ".github/workflows/phase16-typecheck-debug.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/supabase-cloud-foundation-1.6
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
