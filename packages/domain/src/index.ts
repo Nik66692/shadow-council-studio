@@ -63,12 +63,7 @@ export type ProjectMetadata = z.infer<typeof ProjectMetadataSchema>;
 
 export const HealthStatusSchema = z.object({
   projectName: z.literal("Shadow Council Studio"),
-  developmentStage: z.enum([
-    "Foundation",
-    "Phase 1",
-    "Phase 1.5",
-    "Phase 1.6",
-  ]),
+  developmentStage: z.enum(["Foundation", "Phase 1", "Phase 1.5", "Phase 1.6"]),
   databaseConnected: z.boolean(),
   migrationsApplied: z.boolean(),
   sourceOfTruth: z.object({
