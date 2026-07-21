@@ -1,5 +1,6 @@
 mod canon_import;
 mod canon_review;
+mod cloud;
 mod database_studio;
 
 use canon_import::{CanonImportReviewSnapshot, get_latest_review, import_source};
@@ -8,6 +9,10 @@ use canon_review::{
     approve_canon_drafts as approve_drafts,
     get_canon_review_workspace as load_canon_review_workspace,
     reject_canon_drafts as reject_drafts,
+};
+use cloud::{
+    CloudSettingsUpdate, CloudStatus, get_cloud_status as load_cloud_status,
+    update_cloud_settings as save_cloud_settings,
 };
 use database_studio::{
     CanonReviewNoteUpdate, DatabaseAuditEntry, DatabaseFileResult, DatabaseIntegrityReport,
@@ -40,6 +45,8 @@ pub enum AppError {
     CanonReview(String),
     #[error("database studio error: {0}")]
     DatabaseStudio(String),
+    #[error("cloud configuration error: {0}")]
+    Cloud(String),
 }
 
 impl Serialize for AppError {
@@ -229,7 +236,7 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
                 .push("Canonical source unavailable; no canonical content was inferred.".into());
             return Ok(HealthStatus {
                 project_name: "Shadow Council Studio".into(),
-                development_stage: "Phase 1.5".into(),
+                development_stage: "Phase 1.6".into(),
                 database_connected: true,
                 migrations_applied: true,
                 source_of_truth: SourceOfTruthStatus {
@@ -254,7 +261,7 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
         ));
         return Ok(HealthStatus {
             project_name: "Shadow Council Studio".into(),
-            development_stage: "Phase 1.5".into(),
+            development_stage: "Phase 1.6".into(),
             database_connected: true,
             migrations_applied: true,
             source_of_truth: SourceOfTruthStatus {
@@ -278,7 +285,7 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
         ));
         return Ok(HealthStatus {
             project_name: "Shadow Council Studio".into(),
-            development_stage: "Phase 1.5".into(),
+            development_stage: "Phase 1.6".into(),
             database_connected: true,
             migrations_applied: true,
             source_of_truth: SourceOfTruthStatus {
@@ -328,7 +335,7 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
 
     Ok(HealthStatus {
         project_name: "Shadow Council Studio".into(),
-        development_stage: "Phase 1.5".into(),
+        development_stage: "Phase 1.6".into(),
         database_connected: true,
         migrations_applied: true,
         source_of_truth: SourceOfTruthStatus {
@@ -339,7 +346,7 @@ pub async fn build_health(pool: &SqlitePool, root: &Path) -> Result<HealthStatus
         },
         modules_implemented: implemented_modules(),
         next_recommended_phase:
-            "Review imported drafts and build the approved canon registry before publishing the Living Codex."
+            "Configure the optional Supabase workspace, then continue approving canon before publishing the Living Codex."
                 .into(),
         diagnostics,
     })
@@ -356,6 +363,8 @@ fn implemented_modules() -> Vec<String> {
         "Approved canon registry".into(),
         "Immutable review decisions".into(),
         "Database Studio".into(),
+        "Supabase cloud configuration".into(),
+        "Local sync outbox foundation".into(),
     ]
 }
 
@@ -488,6 +497,21 @@ async fn upsert_database_review_note(
     save_review_note(&pool, update).await
 }
 
+#[tauri::command]
+async fn get_cloud_status(app: tauri::AppHandle) -> Result<CloudStatus, AppError> {
+    let pool = open_app_pool(&app).await?;
+    load_cloud_status(&pool).await
+}
+
+#[tauri::command]
+async fn update_cloud_settings(
+    app: tauri::AppHandle,
+    update: CloudSettingsUpdate,
+) -> Result<CloudStatus, AppError> {
+    let pool = open_app_pool(&app).await?;
+    save_cloud_settings(&pool, update).await
+}
+
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
@@ -504,7 +528,9 @@ pub fn run() {
             create_database_backup,
             run_database_integrity_check,
             update_database_project_metadata,
-            upsert_database_review_note
+            upsert_database_review_note,
+            get_cloud_status,
+            update_cloud_settings
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

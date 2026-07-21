@@ -1,0 +1,3 @@
+-- Intentionally empty.
+-- Shadow Council canon and project records are never seeded implicitly.
+-- Development workspaces must be created explicitly by an authenticated user.

@@ -3,6 +3,7 @@ export const sprint0Sections = [
   "Import canonico",
   "Canon Review",
   "Database Studio",
+  "Cloud & Sync",
   "Codex",
   "Carte",
   "Agende e Direttive",
