@@ -1,0 +1,136 @@
+.cloud-sync {
+  max-width: none;
+}
+
+.cloud-mode {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid #6d5f37;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.cloud-mode-LOCAL_ONLY {
+  color: #c9c0aa;
+  background: #28241c;
+}
+
+.cloud-mode-CONFIGURED {
+  color: #e2cc7d;
+  background: #352e18;
+}
+
+.cloud-mode-CLOUD_READY {
+  color: #c5dfb9;
+  background: #1d3220;
+  border-color: #69805f;
+}
+
+.cloud-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.cloud-card {
+  display: grid;
+  align-content: start;
+  gap: 0.55rem;
+}
+
+.cloud-card h3,
+.cloud-card p {
+  margin: 0;
+}
+
+.cloud-card label,
+.cloud-create-workspace label {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.cloud-card input,
+.cloud-create-workspace input {
+  width: 100%;
+  padding: 0.45rem 0.55rem;
+  color: #ece7d5;
+  background: #15130e;
+  border: 1px solid #6d5f37;
+  border-radius: 0.25rem;
+}
+
+.cloud-card button,
+.cloud-actions button,
+.workspace-list button {
+  padding: 0.42rem 0.65rem;
+  color: #ece7d5;
+  background: #282319;
+  border: 1px solid #6d5f37;
+  border-radius: 0.25rem;
+}
+
+.cloud-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.cloud-create-workspace {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.workspace-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.workspace-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.55rem;
+  background: #191710;
+  border: 1px solid #4a412b;
+  border-radius: 0.3rem;
+}
+
+.workspace-list li div {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.workspace-list small {
+  color: #aaa086;
+  overflow-wrap: anywhere;
+}
+
+@media (min-width: 1800px) {
+  .cloud-grid {
+    grid-template-columns: repeat(4, minmax(15rem, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .cloud-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .workspace-list li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
