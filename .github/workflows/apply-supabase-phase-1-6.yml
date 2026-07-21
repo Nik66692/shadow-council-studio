@@ -1,0 +1,49 @@
+name: Apply Supabase Phase 1.6
+
+on:
+  push:
+    branches: [feat/supabase-cloud-foundation-1.6]
+    paths:
+      - ".github/workflows/apply-supabase-phase-1-6.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/supabase-cloud-foundation-1.6
+          fetch-depth: 0
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.13.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.17.0
+          cache: pnpm
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.88.0
+          components: rustfmt
+      - name: Apply Phase 1.6 patches
+        run: python3 .github/scripts/apply_supabase_phase_1_6.py
+      - name: Update JavaScript lockfile
+        run: pnpm install --lockfile-only
+      - name: Update Rust lockfile
+        run: cargo metadata --manifest-path apps/desktop/src-tauri/Cargo.toml --format-version 1 > /dev/null
+      - name: Format repository
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm format
+          cargo fmt --manifest-path apps/desktop/src-tauri/Cargo.toml
+      - name: Commit Phase 1.6 implementation
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "feat: implement Supabase cloud foundation"
+          git push origin HEAD:feat/supabase-cloud-foundation-1.6
