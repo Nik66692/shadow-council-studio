@@ -11,7 +11,7 @@ body {
   grid-template-columns: clamp(13.5rem, 14vw, 15.5rem) minmax(0, 1fr);
 }
 
-aside {
+.app > aside {
   position: sticky;
   top: 0;
   height: 100vh;
@@ -19,7 +19,7 @@ aside {
   padding: 0.75rem;
 }
 
-aside h1 {
+.app > aside h1 {
   margin: 0.2rem 0 0.25rem;
   font-size: 1.12rem;
   line-height: 1.2;
@@ -349,7 +349,7 @@ p {
     grid-template-columns: 1fr;
   }
 
-  aside {
+  .app > aside {
     position: static;
     height: auto;
     overflow: visible;
