@@ -53,6 +53,35 @@ revoke update, delete on public.canon_import_runs from authenticated;
 revoke update, delete on public.canon_raw_blocks from authenticated;
 revoke update, delete on public.canon_import_warnings from authenticated;
 
+-- Draft review state may advance, but imported provenance and original text are immutable.
+create or replace function public.protect_canon_draft_provenance()
+returns trigger
+language plpgsql
+set search_path = public, pg_temp
+as $$
+begin
+  if new.workspace_id is distinct from old.workspace_id
+     or new.id is distinct from old.id
+     or new.import_run_id is distinct from old.import_run_id
+     or new.raw_block_id is distinct from old.raw_block_id
+     or new.source_anchor is distinct from old.source_anchor
+     or new.draft_kind is distinct from old.draft_kind
+     or new.original_text is distinct from old.original_text
+     or new.created_at is distinct from old.created_at then
+    raise exception 'Canonical draft provenance and original text are immutable';
+  end if;
+  return new;
+end;
+$$;
+
+create trigger canon_drafts_protect_provenance
+before update on public.canon_normalized_drafts
+for each row execute function public.protect_canon_draft_provenance();
+
+drop policy if exists canon_normalized_drafts_delete_editor
+  on public.canon_normalized_drafts;
+revoke delete on public.canon_normalized_drafts from authenticated;
+
 -- A device registration can only represent the authenticated user.
 drop policy if exists sync_devices_insert_editor on public.sync_devices;
 drop policy if exists sync_devices_update_editor on public.sync_devices;
