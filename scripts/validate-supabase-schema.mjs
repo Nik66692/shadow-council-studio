@@ -21,10 +21,13 @@ const requiredFragments = [
   "public.has_workspace_role(workspace_id",
   "revoke all on all tables in schema public from anon",
   "source_documents_update_non_immutable",
+  "protect_canon_draft_provenance",
+  "revoke delete on public.canon_normalized_drafts",
   "sync_devices_insert_self",
   "database_audit_log_insert_authenticated_actor",
   "sync_change_log_insert_authenticated_actor",
   "Workspace identity fields are immutable",
+  "Canonical draft provenance and original text are immutable",
 ];
 
 const missing = requiredFragments.filter(
