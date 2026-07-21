@@ -1,6 +1,10 @@
 name: Apply Supabase Phase 1.6
 
 on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/apply-supabase-phase-1-6.yml"
   push:
     branches: [feat/supabase-cloud-foundation-1.6]
     paths:
