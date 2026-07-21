@@ -6,11 +6,12 @@ import { sprint0Sections } from "@shadow-council/ui";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useState } from "react";
 import { CanonReview } from "./CanonReview";
+import { CloudSync } from "./CloudSync";
 import { DatabaseStudio } from "./DatabaseStudio";
 
 const fallback: HealthStatus = {
   projectName: "Shadow Council Studio",
-  developmentStage: "Phase 1.5",
+  developmentStage: "Phase 1.6",
   databaseConnected: false,
   migrationsApplied: false,
   sourceOfTruth: {
@@ -24,9 +25,10 @@ const fallback: HealthStatus = {
     "Import canonico",
     "Canon Review",
     "Database Studio",
+    "Cloud & Sync",
   ],
   nextRecommendedPhase:
-    "Esegui l'app desktop Tauri per accedere al database SQLite locale.",
+    "Esegui l'app desktop Tauri per accedere a SQLite e alla configurazione Supabase opzionale.",
   diagnostics: [
     "Esecuzione fuori da Tauri: diagnostica dimostrativa senza accesso SQLite.",
   ],
@@ -116,7 +118,7 @@ export function App() {
     <main className="app">
       <aside>
         <h1>Shadow Council Studio</h1>
-        <p className="phase-badge">Phase 1.5 · Canon Review</p>
+        <p className="phase-badge">Phase 1.6 · Cloud Foundation</p>
         <nav aria-label="Sezioni">
           <ul>
             {sprint0Sections.map((section) => (
@@ -151,11 +153,13 @@ export function App() {
         )}
         {health && active === "Canon Review" && <CanonReview />}
         {health && active === "Database Studio" && <DatabaseStudio />}
+        {health && active === "Cloud & Sync" && <CloudSync />}
         {health &&
           active !== "Dashboard" &&
           active !== "Import canonico" &&
           active !== "Canon Review" &&
-          active !== "Database Studio" && <NotImplemented title={active} />}
+          active !== "Database Studio" &&
+          active !== "Cloud & Sync" && <NotImplemented title={active} />}
       </section>
     </main>
   );

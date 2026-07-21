@@ -83,19 +83,22 @@ pub async fn get_cloud_status(pool: &SqlitePool) -> Result<CloudStatus, AppError
     )
     .fetch_one(pool)
     .await?;
-    let open_conflict_count: i64 = sqlx::query_scalar(
-        "SELECT COUNT(*) FROM cloud_sync_conflicts WHERE status = 'OPEN'",
-    )
-    .fetch_one(pool)
-    .await?;
+    let open_conflict_count: i64 =
+        sqlx::query_scalar("SELECT COUNT(*) FROM cloud_sync_conflicts WHERE status = 'OPEN'")
+            .fetch_one(pool)
+            .await?;
 
     let configured = settings.supabase_url.is_some() && settings.publishable_key.is_some();
     let sync_ready = configured && settings.workspace_id.is_some();
     let mut diagnostics = Vec::new();
     if !configured {
-        diagnostics.push("Cloud mode is disabled; SQLite remains the only active datastore.".into());
+        diagnostics
+            .push("Cloud mode is disabled; SQLite remains the only active datastore.".into());
     } else if settings.workspace_id.is_none() {
-        diagnostics.push("Supabase is configured; authenticate and select a workspace before synchronization.".into());
+        diagnostics.push(
+            "Supabase is configured; authenticate and select a workspace before synchronization."
+                .into(),
+        );
     } else {
         diagnostics.push("Supabase configuration and workspace selection are present. Automatic synchronization is still disabled in Phase 1.6.".into());
     }

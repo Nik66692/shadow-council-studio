@@ -17,9 +17,13 @@ const requiredFragments = [
   "revoke all on all tables in schema public from anon",
 ];
 
-const missing = requiredFragments.filter((fragment) => !migration.includes(fragment));
+const missing = requiredFragments.filter(
+  (fragment) => !migration.includes(fragment),
+);
 if (missing.length > 0) {
-  throw new Error(`Supabase migration is missing required safeguards:\n${missing.join("\n")}`);
+  throw new Error(
+    `Supabase migration is missing required safeguards:\n${missing.join("\n")}`,
+  );
 }
 
 const forbiddenFragments = [
@@ -31,7 +35,9 @@ const forbidden = forbiddenFragments.filter((fragment) =>
   migration.toLowerCase().includes(fragment),
 );
 if (forbidden.length > 0) {
-  throw new Error(`Supabase migration contains forbidden fragments:\n${forbidden.join("\n")}`);
+  throw new Error(
+    `Supabase migration contains forbidden fragments:\n${forbidden.join("\n")}`,
+  );
 }
 
 console.log(

@@ -1,6 +1,6 @@
 {
   "name": "@shadow-council/desktop",
-  "version": "0.3.2",
+  "version": "0.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -17,7 +17,8 @@
     "@vitejs/plugin-react": "4.6.0",
     "vite": "7.0.5",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "@supabase/supabase-js": "2.110.7"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "6.6.3",

@@ -1,4 +1,8 @@
-import { createClient, type Session, type SupabaseClient } from "@supabase/supabase-js";
+import {
+  createClient,
+  type Session,
+  type SupabaseClient,
+} from "@supabase/supabase-js";
 import { invoke } from "@tauri-apps/api/core";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
@@ -29,7 +33,9 @@ interface WorkspaceRow {
 const environmentUrl = import.meta.env.VITE_SUPABASE_URL ?? "";
 const environmentKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
 
-function createConfiguredClient(settings: CloudSettings | null): SupabaseClient | null {
+function createConfiguredClient(
+  settings: CloudSettings | null,
+): SupabaseClient | null {
   if (!settings?.supabaseUrl || !settings.publishableKey) return null;
   return createClient(settings.supabaseUrl, settings.publishableKey, {
     auth: {
@@ -120,7 +126,9 @@ export function CloudSync() {
     };
   }, [client, loadWorkspaces]);
 
-  async function saveConfiguration(workspaceId = status?.settings.workspaceId ?? null) {
+  async function saveConfiguration(
+    workspaceId = status?.settings.workspaceId ?? null,
+  ) {
     setBusy(true);
     setError(null);
     setNotice(null);
@@ -228,7 +236,9 @@ export function CloudSync() {
       if (rpcError) throw rpcError;
       await loadWorkspaces(client);
       await saveConfiguration(String(data));
-      setNotice("Workspace remoto creato e selezionato. La sincronizzazione resta disattivata.");
+      setNotice(
+        "Workspace remoto creato e selezionato. La sincronizzazione resta disattivata.",
+      );
     } catch (cause: unknown) {
       console.error(cause);
       setError(cause instanceof Error ? cause.message : String(cause));
@@ -255,23 +265,45 @@ export function CloudSync() {
           <p className="eyebrow">PHASE 1.6 · CLOUD FOUNDATION</p>
           <h2>Cloud &amp; Sync</h2>
           <p>
-            Supabase è opzionale. SQLite continua a funzionare offline e nessun dato
-            viene caricato senza un comando esplicito.
+            Supabase è opzionale. SQLite continua a funzionare offline e nessun
+            dato viene caricato senza un comando esplicito.
           </p>
         </div>
-        <span className={`cloud-mode cloud-mode-${status?.mode ?? "LOCAL_ONLY"}`}>
+        <span
+          className={`cloud-mode cloud-mode-${status?.mode ?? "LOCAL_ONLY"}`}
+        >
           {status?.mode ?? "CARICAMENTO"}
         </span>
       </header>
 
-      {error && <p className="warning" role="alert">{error}</p>}
-      {notice && <p className="success-message" role="status">{notice}</p>}
+      {error && (
+        <p className="warning" role="alert">
+          {error}
+        </p>
+      )}
+      {notice && (
+        <p className="success-message" role="status">
+          {notice}
+        </p>
+      )}
 
       <section className="summary-grid" aria-label="Stato cloud">
-        <CloudMetric label="Configurazione" value={status?.configured ? "Presente" : "Locale"} />
-        <CloudMetric label="Sessione" value={session ? "Autenticata" : "Disconnessa"} />
-        <CloudMetric label="Outbox" value={String(status?.pendingOutboxCount ?? 0)} />
-        <CloudMetric label="Conflitti" value={String(status?.openConflictCount ?? 0)} />
+        <CloudMetric
+          label="Configurazione"
+          value={status?.configured ? "Presente" : "Locale"}
+        />
+        <CloudMetric
+          label="Sessione"
+          value={session ? "Autenticata" : "Disconnessa"}
+        />
+        <CloudMetric
+          label="Outbox"
+          value={String(status?.pendingOutboxCount ?? 0)}
+        />
+        <CloudMetric
+          label="Conflitti"
+          value={String(status?.openConflictCount ?? 0)}
+        />
       </section>
 
       <section className="cloud-grid">
@@ -284,8 +316,8 @@ export function CloudSync() {
         >
           <h3>1. Progetto Supabase</h3>
           <p className="definition-meta">
-            Inserisci esclusivamente URL del progetto e publishable key. Le secret key
-            vengono rifiutate dall'app.
+            Inserisci esclusivamente URL del progetto e publishable key. Le
+            secret key vengono rifiutate dall'app.
           </p>
           <label>
             Project URL
@@ -311,8 +343,14 @@ export function CloudSync() {
             />
           </label>
           <div className="cloud-actions">
-            <button type="submit" disabled={busy}>Salva configurazione</button>
-            <button type="button" disabled={busy || !status?.configured} onClick={() => void disableCloud()}>
+            <button type="submit" disabled={busy}>
+              Salva configurazione
+            </button>
+            <button
+              type="button"
+              disabled={busy || !status?.configured}
+              onClick={() => void disableCloud()}
+            >
               Disattiva cloud
             </button>
           </div>
@@ -328,8 +366,15 @@ export function CloudSync() {
           <h3>2. Autenticazione</h3>
           {session ? (
             <>
-              <p>Connesso come <strong>{session.user.email ?? session.user.id}</strong>.</p>
-              <button type="button" disabled={busy} onClick={() => void signOut()}>
+              <p>
+                Connesso come{" "}
+                <strong>{session.user.email ?? session.user.id}</strong>.
+              </p>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void signOut()}
+              >
                 Esci da Supabase
               </button>
             </>
@@ -372,13 +417,23 @@ export function CloudSync() {
               <p>Nessun workspace disponibile. Creane uno in modo esplicito.</p>
               <label>
                 Nome
-                <input value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} />
+                <input
+                  value={workspaceName}
+                  onChange={(event) => setWorkspaceName(event.target.value)}
+                />
               </label>
               <label>
                 Slug
-                <input value={workspaceSlug} onChange={(event) => setWorkspaceSlug(event.target.value)} />
+                <input
+                  value={workspaceSlug}
+                  onChange={(event) => setWorkspaceSlug(event.target.value)}
+                />
               </label>
-              <button type="button" disabled={busy} onClick={() => void createWorkspace()}>
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => void createWorkspace()}
+              >
                 Crea workspace
               </button>
             </div>
@@ -393,11 +448,17 @@ export function CloudSync() {
                   </div>
                   <button
                     type="button"
-                    className={status?.settings.workspaceId === workspace.id ? "active" : ""}
+                    className={
+                      status?.settings.workspaceId === workspace.id
+                        ? "active"
+                        : ""
+                    }
                     disabled={busy}
                     onClick={() => void selectWorkspace(workspace.id)}
                   >
-                    {status?.settings.workspaceId === workspace.id ? "Selezionato" : "Seleziona"}
+                    {status?.settings.workspaceId === workspace.id
+                      ? "Selezionato"
+                      : "Seleziona"}
                   </button>
                 </li>
               ))}
@@ -408,9 +469,9 @@ export function CloudSync() {
         <section className="maintenance-card cloud-card protected-card">
           <h3>4. Sincronizzazione</h3>
           <p>
-            La struttura outbox, cursori e conflitti è pronta. Il push/pull automatico
-            rimane intenzionalmente disabilitato finché non approviamo le regole di
-            conflitto per ogni entità.
+            La struttura outbox, cursori e conflitti è pronta. Il push/pull
+            automatico rimane intenzionalmente disabilitato finché non
+            approviamo le regole di conflitto per ogni entità.
           </p>
           <button type="button" disabled>
             Sincronizzazione non ancora abilitata
