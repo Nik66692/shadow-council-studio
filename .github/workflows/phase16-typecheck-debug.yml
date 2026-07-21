@@ -28,8 +28,21 @@ jobs:
           node-version: 22.17.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Typecheck desktop and print only compiler diagnostics
+      - name: Capture desktop compiler diagnostics
         shell: bash
         run: |
-          set -o pipefail
-          pnpm --filter @shadow-council/desktop typecheck 2>&1 | tail -80
+          set +e
+          pnpm --filter @shadow-council/desktop typecheck > typecheck.log 2>&1
+          echo $? > typecheck.exit
+          set -e
+      - name: Upload compiler diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase16-typecheck-diagnostics
+          path: |
+            typecheck.log
+            typecheck.exit
+          if-no-files-found: error
+      - name: Fail when compiler failed
+        shell: bash
+        run: test "$(cat typecheck.exit)" = "0"
