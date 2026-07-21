@@ -32,6 +32,12 @@ pub struct CloudStatus {
     pub diagnostics: Vec<String>,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum SupabaseEndpointKind {
+    Local,
+    Remote,
+}
+
 fn normalized_optional(value: Option<String>) -> Option<String> {
     value.and_then(|value| {
         let trimmed = value.trim().to_string();
@@ -39,29 +45,74 @@ fn normalized_optional(value: Option<String>) -> Option<String> {
     })
 }
 
-fn validate_url(url: &str) -> Result<(), AppError> {
-    let lower = url.to_ascii_lowercase();
-    let is_local = lower.starts_with("http://127.0.0.1:") || lower.starts_with("http://localhost:");
-    let is_remote = lower.starts_with("https://") && lower.contains(".supabase.co");
-    if is_local || is_remote {
-        Ok(())
-    } else {
-        Err(AppError::Cloud(
-            "Supabase URL must be an HTTPS *.supabase.co project URL or a local Supabase CLI URL"
-                .into(),
-        ))
+fn endpoint_kind(url: &str) -> Result<SupabaseEndpointKind, AppError> {
+    let normalized = url.trim().trim_end_matches('/').to_ascii_lowercase();
+    if normalized.contains(['?', '#', '@']) {
+        return Err(invalid_supabase_url());
     }
+
+    if let Some(authority) = normalized.strip_prefix("https://") {
+        if authority.contains(['/', ':']) {
+            return Err(invalid_supabase_url());
+        }
+        let Some(project_ref) = authority.strip_suffix(".supabase.co") else {
+            return Err(invalid_supabase_url());
+        };
+        let valid_project_ref = !project_ref.is_empty()
+            && project_ref
+                .chars()
+                .all(|character| character.is_ascii_alphanumeric() || character == '-')
+            && project_ref
+                .chars()
+                .next()
+                .is_some_and(|character| character.is_ascii_alphanumeric())
+            && project_ref
+                .chars()
+                .last()
+                .is_some_and(|character| character.is_ascii_alphanumeric());
+        if valid_project_ref {
+            return Ok(SupabaseEndpointKind::Remote);
+        }
+        return Err(invalid_supabase_url());
+    }
+
+    if let Some(authority) = normalized.strip_prefix("http://") {
+        if authority.contains('/') {
+            return Err(invalid_supabase_url());
+        }
+        let Some((host, port)) = authority.rsplit_once(':') else {
+            return Err(invalid_supabase_url());
+        };
+        let valid_host = host == "localhost" || host == "127.0.0.1";
+        let valid_port = port.parse::<u16>().is_ok_and(|port| port > 0);
+        if valid_host && valid_port {
+            return Ok(SupabaseEndpointKind::Local);
+        }
+    }
+
+    Err(invalid_supabase_url())
 }
 
-fn validate_publishable_key(url: &str, key: &str) -> Result<(), AppError> {
+fn invalid_supabase_url() -> AppError {
+    AppError::Cloud(
+        "Supabase URL must be an exact HTTPS <project-ref>.supabase.co origin or a local http://localhost:<port> CLI origin"
+            .into(),
+    )
+}
+
+fn validate_publishable_key(
+    endpoint_kind: SupabaseEndpointKind,
+    key: &str,
+) -> Result<(), AppError> {
     if key.starts_with("sb_secret_") {
         return Err(AppError::Cloud(
             "Secret Supabase keys are forbidden in the desktop app".into(),
         ));
     }
 
-    let is_local = url.starts_with("http://127.0.0.1:") || url.starts_with("http://localhost:");
-    if key.starts_with("sb_publishable_") || (is_local && key.split('.').count() == 3) {
+    if key.starts_with("sb_publishable_")
+        || (endpoint_kind == SupabaseEndpointKind::Local && key.split('.').count() == 3)
+    {
         Ok(())
     } else {
         Err(AppError::Cloud(
@@ -131,8 +182,8 @@ pub async fn update_cloud_settings(
 
     match (&supabase_url, &publishable_key) {
         (Some(url), Some(key)) => {
-            validate_url(url)?;
-            validate_publishable_key(url, key)?;
+            let endpoint_kind = endpoint_kind(url)?;
+            validate_publishable_key(endpoint_kind, key)?;
         }
         (None, None) => {}
         _ => {
@@ -173,6 +224,35 @@ mod tests {
         let status = get_cloud_status(&pool).await.unwrap();
         assert_eq!(status.mode, "LOCAL_ONLY");
         assert!(!status.configured);
+    }
+
+    #[test]
+    fn exact_remote_and_local_supabase_origins_are_accepted() {
+        assert_eq!(
+            endpoint_kind("https://abcd1234.supabase.co/").unwrap(),
+            SupabaseEndpointKind::Remote
+        );
+        assert_eq!(
+            endpoint_kind("http://127.0.0.1:54321").unwrap(),
+            SupabaseEndpointKind::Local
+        );
+        assert_eq!(
+            endpoint_kind("http://localhost:54321/").unwrap(),
+            SupabaseEndpointKind::Local
+        );
+    }
+
+    #[test]
+    fn lookalike_or_credential_redirect_hosts_are_rejected() {
+        for malicious_url in [
+            "https://project.supabase.co.evil.com",
+            "https://attacker.example/path/.supabase.co",
+            "https://project.supabase.co@evil.com",
+            "https://supabase.co",
+            "https://project.supabase.co:443",
+        ] {
+            assert!(endpoint_kind(malicious_url).is_err(), "{malicious_url}");
+        }
     }
 
     #[tokio::test]
