@@ -28,4 +28,8 @@ jobs:
           node-version: 22.17.0
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      - name: Typecheck desktop and print only compiler diagnostics
+        shell: bash
+        run: |
+          set -o pipefail
+          pnpm --filter @shadow-council/desktop typecheck 2>&1 | tail -80
